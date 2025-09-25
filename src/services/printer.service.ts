@@ -14,6 +14,16 @@ export class PrinterService {
     private readonly imageService: ImageService
   ) {}
 
+  async processJobAsync(job: any): Promise<void> {
+    const printerConfig = await this.getPrinterConfiguration(job.printerId);
+    const printer = await this.createPrinterInstance(printerConfig);
+    
+    await this.processPrintContent(printer, job.content);
+    await printer.execute();
+    
+    this.logger.log(`Job ${job.sessionId} processado com sucesso para impressora: ${printerConfig.id}`);
+  }
+
   async print(printRequest: PrintRequestDto): Promise<{ success: boolean; message: string }> {
     try {
       const printerConfig = await this.getPrinterConfiguration(printRequest.printerId);
