@@ -1,0 +1,49 @@
+{
+  "printers": [
+    {
+      "id": "cozinha-1",
+      "name": "Impressora da Cozinha",
+      "type": "epson",
+      "connectionType": "network",
+      "address": "192.168.1.200",
+      "width": 48,
+      "characterSet": "PC852_LATIN2",
+      "timeout": 5000
+    },
+    {
+      "id": "balcao-usb",
+      "name": "Impressora do Balcão",
+      "type": "star",
+      "connectionType": "usb",
+      "address": "/dev/usb/lp0",
+      "width": 42,
+      "characterSet": "PC850_MULTILINGUAL",
+      "timeout": 3000
+    },
+    {
+      "id": "drive-serial",
+      "name": "Impressora do Drive-Thru",
+      "type": "brother",
+      "connectionType": "serial",
+      "address": "/dev/ttyUSB0",
+      "width": 48,
+      "characterSet": "PC437_USA",
+      "timeout": 5000
+    }
+  ],
+  "defaultSettings": {
+    "width": 48,
+    "characterSet": "PC852_LATIN2",
+    "timeout": 5000,
+    "margins": {
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+    },
+    "spacing": {
+      "lineHeight": 1,
+      "paragraphSpacing": 1
+    }
+  }
+}

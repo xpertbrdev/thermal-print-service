@@ -1,0 +1,99 @@
+{
+  "printerId": "cozinha-1",
+  "content": [
+    {
+      "type": "text",
+      "value": "RESTAURANTE EXEMPLO",
+      "style": {
+        "bold": true,
+        "align": "center",
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "type": "text",
+      "value": "Rua das Flores, 123 - Centro",
+      "style": {
+        "align": "center"
+      }
+    },
+    {
+      "type": "text",
+      "value": "Tel: (11) 1234-5678",
+      "style": {
+        "align": "center"
+      }
+    },
+    {
+      "type": "line"
+    },
+    {
+      "type": "text",
+      "value": "PEDIDO #001234",
+      "style": {
+        "bold": true,
+        "align": "center"
+      }
+    },
+    {
+      "type": "text",
+      "value": "Data: 25/09/2025 - 13:45",
+      "style": {
+        "align": "center"
+      }
+    },
+    {
+      "type": "line"
+    },
+    {
+      "type": "table",
+      "table": {
+        "headers": ["Item", "Qtd", "Valor"],
+        "rows": [
+          { "cells": ["Pizza Margherita", "1", "R$ 35,00"] },
+          { "cells": ["Refrigerante 350ml", "2", "R$ 12,00"] },
+          { "cells": ["Batata Frita", "1", "R$ 15,00"] }
+        ]
+      }
+    },
+    {
+      "type": "line"
+    },
+    {
+      "type": "text",
+      "value": "TOTAL: R$ 62,00",
+      "style": {
+        "bold": true,
+        "align": "right",
+        "width": 2,
+        "height": 1
+      }
+    },
+    {
+      "type": "new-line"
+    },
+    {
+      "type": "qr-code",
+      "value": "https://restaurante-exemplo.com/pedido/001234"
+    },
+    {
+      "type": "text",
+      "value": "Obrigado pela preferência!",
+      "style": {
+        "align": "center"
+      }
+    },
+    {
+      "type": "new-line"
+    },
+    {
+      "type": "barcode",
+      "value": "001234567890",
+      "symbology": "CODE128"
+    },
+    {
+      "type": "cut"
+    }
+  ]
+}
