@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, ValidateNested, IsEnum, IsObject, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsArray, ValidateNested, IsEnum, IsObject, IsNumber, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum ContentType {
@@ -150,6 +150,10 @@ export class PrintRequestDto {
   @IsOptional()
   @IsString()
   printerId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  returnBuffer?: boolean;
 
   @IsArray()
   @ValidateNested({ each: true })

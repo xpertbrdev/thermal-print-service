@@ -24,24 +24,38 @@ export class PrinterService {
     this.logger.log(`Job ${job.sessionId} processado com sucesso para impressora: ${printerConfig.id}`);
   }
 
-  async print(printRequest: PrintRequestDto): Promise<{ success: boolean; message: string }> {
+  async print(printRequest: PrintRequestDto): Promise<{ success: boolean; message: string, buffer?: string }> {
     try {
       const printerConfig = await this.getPrinterConfiguration(printRequest.printerId);
       const printer = await this.createPrinterInstance(printerConfig);
       
       await this.processPrintContent(printer, printRequest.content);
       
-      const result = await printer.execute();
-      this.logger.log(`Impressão executada com sucesso para impressora: ${printerConfig.id}`);
+      let bufferText
+      if (printRequest.returnBuffer) {
+        bufferText = printer.getBuffer().toString('utf-8')
+
+      } else {
+        const result = await printer.execute();
+        this.logger.log(`Impressão executada com sucesso para impressora: ${printerConfig.id}`);
+      }
       
       return {
         success: true,
-        message: 'Impressão realizada com sucesso'
+        message: 'Impressão realizada com sucesso',
+        buffer: this.limparTextoEscPos(bufferText)
       };
     } catch (error) {
       this.logger.error('Erro durante impressão:', error);
       throw new BadRequestException(`Falha na impressão: ${error.message}`);
     }
+  }
+
+  limparTextoEscPos(str: string) {
+    // Mantém apenas caracteres imprimíveis e quebras de linha
+    let result = str.replaceAll(/[^\x20-\x7E\n]/g, '');
+    result = result.replace(/[^\x20-\x7E\n]/g, '');
+    return result
   }
 
   async testConnection(printerId?: string): Promise<{ connected: boolean; printer: string }> {
@@ -284,7 +298,7 @@ export class PrinterService {
 
   private processAdvancedTable(printer: ThermalPrinter, table: any): void {
     const columns = table.columns;
-    const separator = table.separator || ' | ';
+    const separator = table.separator || '';
     const borderChar = table.borderChar || '-';
     const defaultWidth = table.defaultColumnWidth || 10;
 
@@ -296,7 +310,7 @@ export class PrinterService {
     // Imprimir cabeçalhos se existirem
     if (table.headers && table.headers.length > 0) {
       printer.bold(true);
-      const headerLine = this.formatTableRow(table.headers, columnWidths, columns, separator);
+      const headerLine = this.formatTableRow(table.headers, columnWidths, columns, '');
       printer.print(headerLine);
       printer.newLine();
       printer.bold(false);
@@ -330,7 +344,7 @@ export class PrinterService {
 
   private formatCell(text: string, width: number, align: string, padding: string): string {
     // Truncar texto se for maior que a largura
-    let content = text.length > width ? text.substring(0, width - 3) + '...' : text;
+    let content = text.length > width ? text.substring(0, width) : text;
     
     // Aplicar alinhamento
     switch (align) {

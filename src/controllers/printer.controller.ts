@@ -14,7 +14,8 @@ export class PrinterController {
       return {
         success: true,
         message: result.message,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        buffer: result.buffer
       };
     } catch (error) {
       return {

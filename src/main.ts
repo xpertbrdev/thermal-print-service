@@ -19,6 +19,6 @@ async function bootstrap() {
   await app.listen(port);
   
   console.log(`🖨️  Microservice de Impressão Térmica rodando na porta ${port}`);
-  console.log(`📋 Documentação da API: http://localhost:${port}/health`);
+  console.log(`📋 Documentação da API: http://localhost:${port}/print/health`);
 }
 bootstrap();
