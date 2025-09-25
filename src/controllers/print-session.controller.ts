@@ -241,7 +241,7 @@ export class PrintSessionController {
     @Query('limit') limit?: string
   ) {
     const stats = this.queueService.getQueueStats();
-    const sessions = [];
+    const sessions: any[] = [];
 
     // Filtrar por status se especificado
     const statusFilter = status ? status.split(',') : null;
@@ -266,7 +266,7 @@ export class PrintSessionController {
     }
 
     // Ordenar por data de criação (mais recentes primeiro)
-    sessions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    sessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return {
       success: true,

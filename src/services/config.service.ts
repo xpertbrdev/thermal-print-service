@@ -12,7 +12,7 @@ export class ConfigService {
   async loadConfig(): Promise<PrinterConfigRequestDto> {
     try {
       if (this.config) {
-        return this.config;
+        return this.config!;
       }
 
       const configExists = await this.fileExists(this.configPath);
@@ -24,7 +24,7 @@ export class ConfigService {
       const configData = await fs.readFile(this.configPath, 'utf-8');
       this.config = JSON.parse(configData);
       this.logger.log('Configuração carregada com sucesso');
-      return this.config;
+      return this.config!;
     } catch (error) {
       this.logger.error('Erro ao carregar configuração:', error);
       throw new Error('Falha ao carregar configuração das impressoras');
@@ -87,16 +87,16 @@ export class ConfigService {
           id: 'default-printer',
           name: 'Impressora Padrão',
           type: 'epson' as any,
-          interface: 'network' as any,
+          connectionType: 'network' as any,
           address: '192.168.1.100',
           width: 48,
-          characterSet: 'PC852_LATIN2',
+          characterSet: 'PC852_LATIN2' as any,
           timeout: 5000
         }
       ],
       defaultSettings: {
         width: 48,
-        characterSet: 'PC852_LATIN2',
+        characterSet: 'PC852_LATIN2' as any,
         timeout: 5000,
         margins: {
           top: 0,

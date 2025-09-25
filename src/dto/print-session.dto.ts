@@ -34,9 +34,6 @@ export class PrintSessionResponseDto {
 }
 
 export class CancelJobRequestDto {
-  @IsString()
-  sessionId: string;
-
   @IsOptional()
   @IsString()
   reason?: string;

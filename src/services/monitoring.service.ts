@@ -132,7 +132,6 @@ export class MonitoringService extends EventEmitter {
     // Métricas por impressora
     this.printerHealth.forEach((health, printerId) => {
       metrics.printerMetrics.push({
-        printerId,
         ...health,
         successRate: health.successCount + health.errorCount > 0 
           ? (health.successCount / (health.successCount + health.errorCount)) * 100 
@@ -175,7 +174,7 @@ export class MonitoringService extends EventEmitter {
    * Obtém alertas baseados em métricas
    */
   getAlerts() {
-    const alerts = [];
+    const alerts: any[] = [];
     const now = new Date();
 
     this.printerHealth.forEach((health, printerId) => {

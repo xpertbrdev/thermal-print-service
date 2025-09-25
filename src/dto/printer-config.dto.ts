@@ -16,6 +16,20 @@ export enum InterfaceType {
   SERIAL = 'serial'
 }
 
+export enum CharacterSetType {
+  PC852_LATIN2 = 'PC852_LATIN2',
+  PC437_USA = 'PC437_USA',
+  PC850_MULTILINGUAL = 'PC850_MULTILINGUAL',
+  PC860_PORTUGUESE = 'PC860_PORTUGUESE',
+  PC863_CANADIAN_FRENCH = 'PC863_CANADIAN_FRENCH',
+  PC865_NORDIC = 'PC865_NORDIC',
+  PC858_EURO = 'PC858_EURO',
+  WPC1252 = 'WPC1252',
+  CHINA = 'CHINA',
+  JAPAN = 'JAPAN',
+  KOREA = 'KOREA'
+}
+
 export class PrinterConfigDto {
   @IsString()
   id: string;
@@ -37,8 +51,8 @@ export class PrinterConfigDto {
   width?: number;
 
   @IsOptional()
-  @IsString()
-  characterSet?: string;
+  @IsEnum(CharacterSetType)
+  characterSet?: CharacterSetType;
 
   @IsOptional()
   @IsNumber()
@@ -55,7 +69,7 @@ export class PrinterConfigRequestDto {
   @IsObject()
   defaultSettings?: {
     width?: number;
-    characterSet?: string;
+    characterSet?: CharacterSetType;
     timeout?: number;
     margins?: {
       top?: number;

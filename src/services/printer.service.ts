@@ -92,10 +92,10 @@ export class PrinterService {
       interface: connectionInterface,
       width: config.width || defaultSettings.width,
       characterSet: characterSet,
-      timeout: config.timeout || defaultSettings.timeout,
+      // timeout removido - não suportado pela interface
       removeSpecialCharacters: false,
       lineCharacter: '-',
-      breakLine: 1 // WORD
+      // breakLine: 1 // Removido - causava erro de tipo
     });
 
     return printer;
@@ -129,12 +129,19 @@ export class PrinterService {
 
   private mapCharacterSet(characterSet?: string): any {
     if (!characterSet) return CharacterSet.PC852_LATIN2;
-    
+
     const charSetMap = {
       'PC852_LATIN2': CharacterSet.PC852_LATIN2,
-      'GB18030': CharacterSet.GB18030,
       'PC437_USA': CharacterSet.PC437_USA,
-      'PC850_MULTILINGUAL': CharacterSet.PC850_MULTILINGUAL
+      'PC850_MULTILINGUAL': CharacterSet.PC850_MULTILINGUAL,
+      'PC860_PORTUGUESE': CharacterSet.PC860_PORTUGUESE,
+      'PC863_CANADIAN_FRENCH': CharacterSet.PC863_CANADIAN_FRENCH,
+      'PC865_NORDIC': CharacterSet.PC865_NORDIC,
+      'PC858_EURO': CharacterSet.PC858_EURO,
+      'WPC1252': CharacterSet.WPC1252,
+      'CHINA': CharacterSet.CHINA,
+      'JAPAN': CharacterSet.JAPAN,
+      'KOREA': CharacterSet.KOREA,
     };
 
     return charSetMap[characterSet] || CharacterSet.PC852_LATIN2;
