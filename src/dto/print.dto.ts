@@ -43,6 +43,27 @@ export class TextStyleDto {
   height?: number;
 }
 
+export class QrCodeDto {
+  @IsString()
+  value: string;
+
+  @IsOptional()
+  @IsNumber()
+  size?: number; // Tamanho do QR code (1-8, padrão: 6)
+
+  @IsOptional()
+  @IsEnum(TextAlign)
+  align?: TextAlign; // Alinhamento: left, center, right
+
+  @IsOptional()
+  @IsNumber()
+  width?: number; // Largura personalizada
+
+  @IsOptional()
+  @IsNumber()
+  height?: number; // Altura personalizada
+}
+
 export class TableRowDto {
   @IsArray()
   @IsString({ each: true })
@@ -82,6 +103,11 @@ export class ContentItemDto {
   @ValidateNested()
   @Type(() => TableDto)
   table?: TableDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QrCodeDto)
+  qrCode?: QrCodeDto;
 
   @IsOptional()
   @IsString()

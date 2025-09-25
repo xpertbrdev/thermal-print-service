@@ -283,10 +283,55 @@ export class PrinterService {
   }
 
   private processQRCodeItem(printer: ThermalPrinter, item: ContentItemDto): void {
-    if (!item.value) return;
+    // Usar qrCode se disponível, senão usar value para compatibilidade
+    const qrData = item.qrCode || { value: item.value, size: 6, align: 'left' as any };
+    
+    if (!qrData.value) return;
 
     try {
-      printer.printQR(item.value);
+      // Configurar alinhamento se especificado
+      if (qrData.align) {
+        switch (qrData.align) {
+          case 'left':
+            printer.alignLeft();
+            break;
+          case 'center':
+            printer.alignCenter();
+            break;
+          case 'right':
+            printer.alignRight();
+            break;
+        }
+      }
+
+      // Configurar tamanho se especificado (1-8, padrão 6)
+      const size = qrData.size || 6;
+      
+      // Configurar dimensões personalizadas se especificadas
+      const options: any = {};
+      if ('width' in qrData && qrData.width) options.width = qrData.width;
+      if ('height' in qrData && qrData.height) options.height = qrData.height;
+
+      // Imprimir QR Code com configurações
+      const qrOptions = {
+        cellSize: size,
+        correction: 'M' as any,
+        model: 2
+      };
+
+      // Adicionar dimensões personalizadas se especificadas
+      if (Object.keys(options).length > 0) {
+        Object.assign(qrOptions, options);
+      }
+
+      // Imprimir QR Code
+      printer.printQR(qrData.value, qrOptions);
+
+      // Resetar alinhamento para padrão (esquerda) após impressão
+      if (qrData.align && qrData.align !== 'left') {
+        printer.alignLeft();
+      }
+
     } catch (error) {
       this.logger.error(`Erro ao imprimir QR Code: ${error.message}`);
       throw new Error(`Falha ao imprimir QR Code: ${error.message}`);

@@ -1,0 +1,167 @@
+{
+	"info": {
+		"_postman_id": "qr-code-examples-2025",
+		"name": "QR Code Examples - Thermal Printer",
+		"description": "Exemplos específicos para QR codes com configurações de tamanho e alinhamento",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "QR Code - Formato Simples (Compatibilidade)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"QR CODE SIMPLES (Compatibilidade)\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"qr-code\",\n      \"value\": \"https://exemplo.com/pedido/123\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Formato simples - tamanho padrão\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/print/session",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"print",
+						"session"
+					]
+				},
+				"description": "QR code usando formato simples (value diretamente) para compatibilidade com versão anterior"
+			}
+		},
+		{
+			"name": "QR Code - Tamanho Pequeno (size: 3)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"QR CODE PEQUENO (Tamanho 3)\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"qr-code\",\n      \"qrCode\": {\n        \"value\": \"https://exemplo.com/pedido/pequeno\",\n        \"size\": 3,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Tamanho 3 - Centralizado\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/print/session",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"print",
+						"session"
+					]
+				},
+				"description": "QR code pequeno (tamanho 3) centralizado"
+			}
+		},
+		{
+			"name": "QR Code - Tamanho Grande (size: 8)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"QR CODE GRANDE (Tamanho 8)\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"qr-code\",\n      \"qrCode\": {\n        \"value\": \"https://exemplo.com/pedido/grande\",\n        \"size\": 8,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Tamanho 8 - Máximo\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/print/session",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"print",
+						"session"
+					]
+				},
+				"description": "QR code grande (tamanho 8) centralizado"
+			}
+		},
+		{
+			"name": "QR Code - Alinhamento à Esquerda",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"QR CODE ALINHADO À ESQUERDA\",\n      \"style\": {\n        \"bold\": true\n      }\n    },\n    {\n      \"type\": \"qr-code\",\n      \"qrCode\": {\n        \"value\": \"https://exemplo.com/esquerda\",\n        \"size\": 5,\n        \"align\": \"left\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Alinhado à esquerda\"\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/print/session",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"print",
+						"session"
+					]
+				},
+				"description": "QR code alinhado à esquerda"
+			}
+		},
+		{
+			"name": "QR Code - Alinhamento à Direita",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"QR CODE ALINHADO À DIREITA\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"right\"\n      }\n    },\n    {\n      \"type\": \"qr-code\",\n      \"qrCode\": {\n        \"value\": \"https://exemplo.com/direita\",\n        \"size\": 5,\n        \"align\": \"right\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Alinhado à direita\",\n      \"style\": {\n        \"align\": \"right\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/print/session",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"print",
+						"session"
+					]
+				},
+				"description": "QR code alinhado à direita"
+			}
+		},
+		{
+			"name": "QR Code - Múltiplos Tamanhos",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"COMPARAÇÃO DE TAMANHOS\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Tamanho 2 (Muito Pequeno):\"\n    },\n    {\n      \"type\": \"qr-code\",\n      \"qrCode\": {\n        \"value\": \"Tamanho 2\",\n        \"size\": 2,\n        \"align\": \"left\"\n      }\n    },\n    {\n      \"type\": \"new-line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Tamanho 4 (Pequeno):\"\n    },\n    {\n      \"type\": \"qr-code\",\n      \"qrCode\": {\n        \"value\": \"Tamanho 4\",\n        \"size\": 4,\n        \"align\": \"left\"\n      }\n    },\n    {\n      \"type\": \"new-line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Tamanho 6 (Padrão):\"\n    },\n    {\n      \"type\": \"qr-code\",\n      \"qrCode\": {\n        \"value\": \"Tamanho 6\",\n        \"size\": 6,\n        \"align\": \"left\"\n      }\n    },\n    {\n      \"type\": \"new-line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Tamanho 8 (Grande):\"\n    },\n    {\n      \"type\": \"qr-code\",\n      \"qrCode\": {\n        \"value\": \"Tamanho 8\",\n        \"size\": 8,\n        \"align\": \"left\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/print/session",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"print",
+						"session"
+					]
+				},\n				"description": "Comparação visual de diferentes tamanhos de QR code"\n			}\n		},\n		{\n			"name": "QR Code - Cupom Fiscal Completo",\n			"request": {\n				"method": "POST",\n				"header": [\n					{\n						"key": "Content-Type",\n						"value": "application/json"\n					}\n				],\n				"body": {\n					"mode": "raw",\n					"raw": "{\\n  \\"printerId\\": \\"balcao-1\\",\\n  \\"content\\": [\\n    {\\n      \\"type\\": \\"text\\",\\n      \\"value\\": \\"RESTAURANTE EXEMPLO LTDA\\",\\n      \\"style\\": {\\n        \\"bold\\": true,\\n        \\"align\\": \\"center\\"\\n      }\\n    },\\n    {\\n      \\"type\\": \\"text\\",\\n      \\"value\\": \\"CNPJ: 12.345.678/0001-90\\",\\n      \\"style\\": {\\n        \\"align\\": \\"center\\"\\n      }\\n    },\\n    {\\n      \\"type\\": \\"line\\"\\n    },\\n    {\\n      \\"type\\": \\"text\\",\\n      \\"value\\": \\"CUPOM FISCAL ELETRÔNICO\\",\\n      \\"style\\": {\\n        \\"bold\\": true,\\n        \\"align\\": \\"center\\"\\n      }\\n    },\\n    {\\n      \\"type\\": \\"line\\"\\n    },\\n    {\\n      \\"type\\": \\"table\\",\\n      \\"table\\": {\\n        \\"headers\\": [\\"ITEM\\", \\"QTD\\", \\"VL UNIT\\", \\"VL TOTAL\\"],\\n        \\"rows\\": [\\n          {\\"cells\\": [\\"Pizza Margherita\\", \\"1\\", \\"35,00\\", \\"35,00\\"]},\\n          {\\"cells\\": [\\"Refrigerante 350ml\\", \\"2\\", \\"6,00\\", \\"12,00\\"]},\\n          {\\"cells\\": [\\"Taxa Entrega\\", \\"1\\", \\"5,00\\", \\"5,00\\"]}\\n        ]\\n      }\\n    },\\n    {\\n      \\"type\\": \\"line\\"\\n    },\\n    {\\n      \\"type\\": \\"text\\",\\n      \\"value\\": \\"TOTAL: R$ 52,00\\",\\n      \\"style\\": {\\n        \\"bold\\": true\\n      }\\n    },\\n    {\\n      \\"type\\": \\"line\\"\\n    },\\n    {\\n      \\"type\\": \\"text\\",\\n      \\"value\\": \\"FORMA DE PAGAMENTO: PIX\\"\\n    },\\n    {\\n      \\"type\\": \\"text\\",\\n      \\"value\\": \\"Data: 25/09/2025 19:45:30\\"\\n    },\\n    {\\n      \\"type\\": \\"new-line\\"\\n    },\\n    {\\n      \\"type\\": \\"text\\",\\n      \\"value\\": \\"Consulte pela Chave de Acesso:\\",\\n      \\"style\\": {\\n        \\"align\\": \\"center\\"\\n      }\\n    },\\n    {\\n      \\"type\\": \\"qr-code\\",\\n      \\"qrCode\\": {\\n        \\"value\\": \\"35250912345678000190590010000000123|20250925|52.00\\",\\n        \\"size\\": 7,\\n        \\"align\\": \\"center\\"\\n      }\\n    },\\n    {\\n      \\"type\\": \\"text\\",\\n      \\"value\\": \\"www.fazenda.sp.gov.br\\",\\n      \\"style\\": {\\n        \\"align\\": \\"center\\"\\n      }\\n    },\\n    {\\n      \\"type\\": \\"cut\\"\\n    }\\n  ]\\n}"\n				},\n				"url": {\n					"raw": "{{baseUrl}}/print/session",\n					"host": [\n						"{{baseUrl}}"\n					],\n					"path": [\n						"print",\n						"session"\n					]\n				},\n				"description": "Exemplo completo de cupom fiscal com QR code grande e centralizado"\n			}\n		}\n	],\n	"variable": [\n		{\n			"key": "baseUrl",\n			"value": "http://localhost:3000",\n			"description": "URL base do microservice"\n		}\n	]\n}
