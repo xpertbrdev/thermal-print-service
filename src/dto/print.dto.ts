@@ -70,6 +70,20 @@ export class TableRowDto {
   cells: string[];
 }
 
+export class TableColumnDto {
+  @IsOptional()
+  @IsNumber()
+  width?: number; // Largura da coluna em caracteres
+
+  @IsOptional()
+  @IsEnum(TextAlign)
+  align?: TextAlign; // Alinhamento do conteúdo da coluna
+
+  @IsOptional()
+  @IsString()
+  padding?: string; // Caractere de preenchimento (padrão: espaço)
+}
+
 export class TableDto {
   @IsOptional()
   @IsArray()
@@ -80,6 +94,24 @@ export class TableDto {
   @ValidateNested({ each: true })
   @Type(() => TableRowDto)
   rows: TableRowDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TableColumnDto)
+  columns?: TableColumnDto[]; // Configurações de largura e alinhamento por coluna
+
+  @IsOptional()
+  @IsNumber()
+  defaultColumnWidth?: number; // Largura padrão se não especificada
+
+  @IsOptional()
+  @IsString()
+  separator?: string; // Separador entre colunas (padrão: " | ")
+
+  @IsOptional()
+  @IsString()
+  borderChar?: string; // Caractere para bordas (padrão: "-")
 }
 
 export class ContentItemDto {

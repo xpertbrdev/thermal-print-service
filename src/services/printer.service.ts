@@ -256,18 +256,102 @@ export class PrinterService {
   private processTableItem(printer: ThermalPrinter, item: ContentItemDto): void {
     if (!item.table) return;
 
-    // Imprimir cabeçalhos se existirem
-    if (item.table.headers && item.table.headers.length > 0) {
+    const table = item.table;
+    
+    // Se não há configurações de colunas, usar método simples
+    if (!table.columns || table.columns.length === 0) {
+      this.processSimpleTable(printer, table);
+      return;
+    }
+
+    // Processar tabela com larguras fixas
+    this.processAdvancedTable(printer, table);
+  }
+
+  private processSimpleTable(printer: ThermalPrinter, table: any): void {
+    // Método original para compatibilidade
+    if (table.headers && table.headers.length > 0) {
       printer.bold(true);
-      printer.table(item.table.headers);
+      printer.table(table.headers);
       printer.bold(false);
       printer.drawLine();
     }
 
-    // Imprimir linhas da tabela
-    for (const row of item.table.rows) {
+    for (const row of table.rows) {
       printer.table(row.cells);
     }
+  }
+
+  private processAdvancedTable(printer: ThermalPrinter, table: any): void {
+    const columns = table.columns;
+    const separator = table.separator || ' | ';
+    const borderChar = table.borderChar || '-';
+    const defaultWidth = table.defaultColumnWidth || 10;
+
+    // Calcular larguras das colunas
+    const columnWidths = columns.map((col: any, index: number) => 
+      col?.width || defaultWidth
+    );
+
+    // Imprimir cabeçalhos se existirem
+    if (table.headers && table.headers.length > 0) {
+      printer.bold(true);
+      const headerLine = this.formatTableRow(table.headers, columnWidths, columns, separator);
+      printer.print(headerLine);
+      printer.newLine();
+      printer.bold(false);
+      
+      // Linha separadora
+      const borderLine = this.createBorderLine(columnWidths, separator, borderChar);
+      printer.print(borderLine);
+      printer.newLine();
+    }
+
+    // Imprimir linhas da tabela
+    for (const row of table.rows) {
+      const formattedLine = this.formatTableRow(row.cells, columnWidths, columns, separator);
+      printer.print(formattedLine);
+      printer.newLine();
+    }
+  }
+
+  private formatTableRow(cells: string[], widths: number[], columns: any[], separator: string): string {
+    const formattedCells = cells.map((cell, index) => {
+      const width = widths[index] || widths[0];
+      const column = columns[index] || {};
+      const align = column.align || 'left';
+      const padding = column.padding || ' ';
+
+      return this.formatCell(cell, width, align, padding);
+    });
+
+    return formattedCells.join(separator);
+  }
+
+  private formatCell(text: string, width: number, align: string, padding: string): string {
+    // Truncar texto se for maior que a largura
+    let content = text.length > width ? text.substring(0, width - 3) + '...' : text;
+    
+    // Aplicar alinhamento
+    switch (align) {
+      case 'center':
+        const totalPadding = width - content.length;
+        const leftPadding = Math.floor(totalPadding / 2);
+        const rightPadding = totalPadding - leftPadding;
+        return padding.repeat(leftPadding) + content + padding.repeat(rightPadding);
+      
+      case 'right':
+        return content.padStart(width, padding);
+      
+      case 'left':
+      default:
+        return content.padEnd(width, padding);
+    }
+  }
+
+  private createBorderLine(widths: number[], separator: string, borderChar: string): string {
+    const borders = widths.map(width => borderChar.repeat(width));
+    return borders.join(separator.replace(/./g, borderChar));
   }
 
   private processBarcodeItem(printer: ThermalPrinter, item: ContentItemDto): void {
