@@ -1,0 +1,759 @@
+{
+	"info": {
+		"_postman_id": "thermal-printer-ms-2025",
+		"name": "Thermal Printer Microservice",
+		"description": "Collection completa para o microservice de impressão térmica com sistema de sessões, filas e monitoramento.\n\n🚀 **FUNCIONALIDADES:**\n- Configuração de impressoras\n- Sistema de sessões com controle de status\n- Impressão com filas independentes por impressora\n- Monitoramento completo com dashboard\n- Suporte a múltiplas impressões simultâneas\n\n📋 **COMO USAR:**\n1. Configure as impressoras (POST /config)\n2. Envie jobs de impressão (POST /print/session)\n3. Monitore status (GET /print/status/:sessionId)\n4. Acompanhe métricas (GET /monitoring/dashboard)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "thermal-printer-ms"
+	},
+	"item": [
+		{
+			"name": "🔧 Configuração",
+			"item": [
+				{
+					"name": "Configurar Impressoras",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"printers\": [\n    {\n      \"id\": \"cozinha-1\",\n      \"name\": \"Impressora da Cozinha\",\n      \"type\": \"epson\",\n      \"connectionType\": \"network\",\n      \"address\": \"192.168.1.200\",\n      \"width\": 48,\n      \"characterSet\": \"PC852_LATIN2\"\n    },\n    {\n      \"id\": \"balcao-1\",\n      \"name\": \"Impressora do Balcão\",\n      \"type\": \"star\",\n      \"connectionType\": \"usb\",\n      \"address\": \"/dev/usb/lp0\",\n      \"width\": 42\n    },\n    {\n      \"id\": \"delivery-1\",\n      \"name\": \"Impressora Delivery\",\n      \"type\": \"brother\",\n      \"connectionType\": \"network\",\n      \"address\": \"192.168.1.201\",\n      \"width\": 48\n    }\n  ],\n  \"defaultSettings\": {\n    \"width\": 48,\n    \"characterSet\": \"PC852_LATIN2\",\n    \"timeout\": 5000,\n    \"margins\": {\n      \"top\": 0,\n      \"bottom\": 0,\n      \"left\": 0,\n      \"right\": 0\n    },\n    \"spacing\": {\n      \"lineHeight\": 1,\n      \"paragraphSpacing\": 1\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/config",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"config"
+							]
+						},
+						"description": "Configura múltiplas impressoras com diferentes tipos de conexão (rede, USB, serial) e define configurações padrão."
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Configuração Completa",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"config"
+							]
+						},
+						"description": "Retorna a configuração completa de todas as impressoras e configurações padrão."
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Lista de Impressoras",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config/printers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"config",
+								"printers"
+							]
+						},
+						"description": "Lista todas as impressoras configuradas."
+					},
+					"response": []
+				},
+				{
+					"name": "Obter Impressora Específica",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/config/printers/{{printerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"config",
+								"printers",
+								"{{printerId}}"
+							]
+						},
+						"description": "Obtém configuração de uma impressora específica."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para configuração de impressoras e definições padrão."
+		},
+		{
+			"name": "🖨️ Impressão com Sessões",
+			"item": [
+				{
+					"name": "Imprimir com Sessão (Completo)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"priority\": 1,\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"RESTAURANTE EXEMPLO\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\",\n        \"size\": \"large\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Rua das Flores, 123 - Centro\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Tel: (11) 1234-5678\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"PEDIDO #123\",\n      \"style\": {\n        \"bold\": true\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Data: 25/09/2025 - 14:30\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Cliente: João Silva\"\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"table\",\n      \"headers\": [\"Item\", \"Qtd\", \"Valor\"],\n      \"rows\": [\n        [\"Pizza Margherita\", \"1\", \"R$ 35,00\"],\n        [\"Refrigerante 350ml\", \"2\", \"R$ 12,00\"],\n        [\"Taxa de Entrega\", \"1\", \"R$ 5,00\"]\n      ]\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"TOTAL: R$ 52,00\",\n      \"style\": {\n        \"bold\": true,\n        \"size\": \"large\"\n      }\n    },\n    {\n      \"type\": \"new_line\"\n    },\n    {\n      \"type\": \"qr_code\",\n      \"value\": \"https://exemplo.com/pedido/123\",\n      \"size\": 6\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Obrigado pela preferência!\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"session"
+							]
+						},
+						"description": "Exemplo completo de impressão com texto formatado, tabela, QR code e corte de papel."
+					},
+					"response": []
+				},
+				{
+					"name": "Imprimir com SessionId Customizado",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sessionId\": \"sess_20250925_143000_CUSTOM01\",\n  \"printerId\": \"balcao-1\",\n  \"priority\": 2,\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"RECIBO PERSONALIZADO\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"SessionId: sess_20250925_143000_CUSTOM01\"\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"session"
+							]
+						},
+						"description": "Exemplo usando sessionId customizado em vez de geração automática."
+					},
+					"response": []
+				},
+				{
+					"name": "Imprimir com Imagem",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\n      \"type\": \"image\",\n      \"path\": \"/path/to/logo.png\",\n      \"width\": 200,\n      \"height\": 100\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Logo impresso acima\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"session"
+							]
+						},
+						"description": "Exemplo de impressão incluindo imagem."
+					},
+					"response": []
+				},
+				{
+					"name": "Imprimir Código de Barras",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"printerId\": \"delivery-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"ETIQUETA DE ENTREGA\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"barcode\",\n      \"value\": \"DEL123456789\",\n      \"type\": \"CODE128\",\n      \"width\": 2,\n      \"height\": 100\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"DEL123456789\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"session"
+							]
+						},
+						"description": "Exemplo de impressão com código de barras."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para impressão com controle de sessão e filas."
+		},
+		{
+			"name": "📊 Controle de Status",
+			"item": [
+				{
+					"name": "Consultar Status da Sessão",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/print/status/{{sessionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"status",
+								"{{sessionId}}"
+							]
+						},
+						"description": "Consulta o status atual de uma sessão específica."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancelar Sessão",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Cliente cancelou o pedido\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/cancel/{{sessionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"cancel",
+								"{{sessionId}}"
+							]
+						},
+						"description": "Cancela uma sessão de impressão com motivo opcional."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Sessões Ativas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/print/sessions?status=queued,printing&limit=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"sessions"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "queued,printing",
+									"description": "Filtrar por status (queued, printing, completed, failed, cancelled)"
+								},
+								{
+									"key": "limit",
+									"value": "20",
+									"description": "Limite de resultados"
+								}
+							]
+						},
+						"description": "Lista sessões ativas com filtros opcionais."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para controle e monitoramento de sessões."
+		},
+		{
+			"name": "🔄 Gerenciamento de Filas",
+			"item": [
+				{
+					"name": "Ver Fila da Impressora",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/print/queue/{{printerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"queue",
+								"{{printerId}}"
+							]
+						},
+						"description": "Visualiza todos os jobs na fila de uma impressora específica."
+					},
+					"response": []
+				},
+				{
+					"name": "Limpar Fila da Impressora",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Manutenção da impressora\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/queue/{{printerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"queue",
+								"{{printerId}}"
+							]
+						},
+						"description": "Cancela todos os jobs pendentes na fila de uma impressora."
+					},
+					"response": []
+				},
+				{
+					"name": "Estatísticas das Filas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/print/stats",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"stats"
+							]
+						},
+						"description": "Retorna estatísticas gerais de todas as filas e jobs."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gerenciamento de filas por impressora."
+		},
+		{
+			"name": "📈 Monitoramento",
+			"item": [
+				{
+					"name": "Dashboard Completo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/monitoring/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"monitoring",
+								"dashboard"
+							]
+						},
+						"description": "Dashboard completo com resumo geral, filas, alertas e status das impressoras."
+					},
+					"response": []
+				},
+				{
+					"name": "Métricas de Performance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/monitoring/metrics",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"monitoring",
+								"metrics"
+							]
+						},
+						"description": "Métricas detalhadas de performance e estatísticas das filas."
+					},
+					"response": []
+				},
+				{
+					"name": "Status de Saúde das Impressoras",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/monitoring/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"monitoring",
+								"health"
+							]
+						},
+						"description": "Status de saúde de todas as impressoras (online/offline, taxa de sucesso, etc.)."
+					},
+					"response": []
+				},
+				{
+					"name": "Saúde de Impressora Específica",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/monitoring/health/{{printerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"monitoring",
+								"health",
+								"{{printerId}}"
+							]
+						},
+						"description": "Status detalhado de saúde de uma impressora específica."
+					},
+					"response": []
+				},
+				{
+					"name": "Alertas do Sistema",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/monitoring/alerts?severity=high",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"monitoring",
+								"alerts"
+							],
+							"query": [
+								{
+									"key": "severity",
+									"value": "high",
+									"description": "Filtrar por severidade (high, medium, low)"
+								}
+							]
+						},
+						"description": "Lista alertas do sistema com filtro opcional por severidade."
+					},
+					"response": []
+				},
+				{
+					"name": "Histórico de Eventos da Sessão",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/monitoring/job/{{sessionId}}/history",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"monitoring",
+								"job",
+								"{{sessionId}}",
+								"history"
+							]
+						},
+						"description": "Histórico completo de eventos de uma sessão específica."
+					},
+					"response": []
+				},
+				{
+					"name": "Limpar Histórico de Monitoramento",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/monitoring/cleanup?hours=24",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"monitoring",
+								"cleanup"
+							],
+							"query": [
+								{
+									"key": "hours",
+									"value": "24",
+									"description": "Manter apenas dados das últimas X horas"
+								}
+							]
+						},
+						"description": "Limpa histórico de monitoramento mais antigo que X horas."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para monitoramento completo, métricas e alertas."
+		},
+		{
+			"name": "🧪 Testes e Utilitários",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/print/health",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"health"
+							]
+						},
+						"description": "Verifica se o serviço está funcionando."
+					},
+					"response": []
+				},
+				{
+					"name": "Testar Conexão com Impressora",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/print/test-connection?printerId={{printerId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"test-connection"
+							],
+							"query": [
+								{
+									"key": "printerId",
+									"value": "{{printerId}}",
+									"description": "ID da impressora para testar"
+								}
+							]
+						},
+						"description": "Testa a conexão com uma impressora específica."
+					},
+					"response": []
+				},
+				{
+					"name": "Impressão Simples (Compatibilidade)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"Teste de impressão simples\"\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print"
+							]
+						},
+						"description": "Endpoint de impressão simples (sem sistema de sessões) para compatibilidade."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para testes e verificações do sistema."
+		},
+		{
+			"name": "🎯 Cenários de Uso",
+			"item": [
+				{
+					"name": "Cenário: Restaurante - Pedido Cozinha",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"printerId\": \"cozinha-1\",\n  \"priority\": 1,\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"=== PEDIDO COZINHA ===\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Mesa: 15 | Garçom: Maria\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Horário: 19:45 | Pedido: #456\"\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"2x Pizza Margherita (Grande)\",\n      \"style\": {\n        \"bold\": true\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"  - Sem cebola\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"  - Extra queijo\"\n    },\n    {\n      \"type\": \"new_line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"1x Lasanha Bolonhesa\",\n      \"style\": {\n        \"bold\": true\n      }\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"OBSERVAÇÕES:\",\n      \"style\": {\n        \"bold\": true\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Cliente alérgico a frutos do mar\"\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"session"
+							]
+						},
+						"description": "Exemplo de pedido para cozinha com observações especiais."
+					},
+					"response": []
+				},
+				{
+					"name": "Cenário: Delivery - Etiqueta de Entrega",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"printerId\": \"delivery-1\",\n  \"priority\": 1,\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"DELIVERY EXPRESS\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\",\n        \"size\": \"large\"\n      }\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Pedido: #DEL789\",\n      \"style\": {\n        \"bold\": true\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Cliente: Ana Santos\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Telefone: (11) 98765-4321\"\n    },\n    {\n      \"type\": \"new_line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"ENDEREÇO:\",\n      \"style\": {\n        \"bold\": true\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Rua das Palmeiras, 456\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Apto 203 - Bloco B\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Jardim Primavera - São Paulo\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"CEP: 01234-567\"\n    },\n    {\n      \"type\": \"new_line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"VALOR: R$ 67,50\",\n      \"style\": {\n        \"bold\": true,\n        \"size\": \"large\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"PAGAMENTO: Cartão (Pago)\"\n    },\n    {\n      \"type\": \"new_line\"\n    },\n    {\n      \"type\": \"barcode\",\n      \"value\": \"DEL789\",\n      \"type\": \"CODE128\"\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"session"
+							]
+						},
+						"description": "Etiqueta completa para entrega delivery com código de barras."
+					},
+					"response": []
+				},
+				{
+					"name": "Cenário: Balcão - Cupom Fiscal",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"printerId\": \"balcao-1\",\n  \"priority\": 2,\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"RESTAURANTE EXEMPLO LTDA\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"CNPJ: 12.345.678/0001-90\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Rua das Flores, 123 - Centro\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"CUPOM FISCAL ELETRÔNICO\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"CFe: 35250912345678000190590010000000123\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"table\",\n      \"headers\": [\"ITEM\", \"QTD\", \"VL UNIT\", \"VL TOTAL\"],\n      \"rows\": [\n        [\"Pizza Margherita\", \"1\", \"35,00\", \"35,00\"],\n        [\"Refrigerante 350ml\", \"2\", \"6,00\", \"12,00\"],\n        [\"Taxa Entrega\", \"1\", \"5,00\", \"5,00\"]\n      ]\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"SUBTOTAL: R$ 52,00\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"DESCONTO: R$ 2,00\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"TOTAL: R$ 50,00\",\n      \"style\": {\n        \"bold\": true,\n        \"size\": \"large\"\n      }\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"FORMA DE PAGAMENTO: PIX\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Data: 25/09/2025 19:45:30\"\n    },\n    {\n      \"type\": \"new_line\"\n    },\n    {\n      \"type\": \"qr_code\",\n      \"value\": \"35250912345678000190590010000000123|20250925|50.00\",\n      \"size\": 6\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Consulte pela Chave de Acesso em:\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"www.fazenda.sp.gov.br\",\n      \"style\": {\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/print/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"print",
+								"session"
+							]
+						},
+						"description": "Cupom fiscal completo com QR code para consulta."
+					},
+					"response": []
+				}
+			],
+			"description": "Exemplos práticos de uso em diferentes cenários reais."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Gerar sessionId automático se não existir",
+					"if (!pm.collectionVariables.get('sessionId')) {",
+					"    const now = new Date();",
+					"    const date = now.toISOString().slice(0,10).replace(/-/g,'');",
+					"    const time = now.toTimeString().slice(0,8).replace(/:/g,'');",
+					"    const random = Math.random().toString(16).substr(2,8).toUpperCase();",
+					"    const sessionId = `sess_${date}_${time}_${random}`;",
+					"    pm.collectionVariables.set('sessionId', sessionId);",
+					"    console.log('Generated sessionId:', sessionId);",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Capturar sessionId das respostas",
+					"if (pm.response.json() && pm.response.json().sessionId) {",
+					"    pm.collectionVariables.set('sessionId', pm.response.json().sessionId);",
+					"    console.log('Captured sessionId:', pm.response.json().sessionId);",
+					"}",
+					"",
+					"// Log da resposta para debug",
+					"if (pm.response.code !== 200 && pm.response.code !== 201 && pm.response.code !== 202) {",
+					"    console.log('Response Status:', pm.response.code);",
+					"    console.log('Response Body:', pm.response.text());",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"description": "URL base do microservice"
+		},
+		{
+			"key": "printerId",
+			"value": "cozinha-1",
+			"description": "ID da impressora padrão para testes"
+		},
+		{
+			"key": "sessionId",
+			"value": "",
+			"description": "ID da sessão (gerado automaticamente)"
+		}
+	]
+}
