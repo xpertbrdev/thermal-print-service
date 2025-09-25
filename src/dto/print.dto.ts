@@ -127,6 +127,10 @@ export class ContentItemDto {
   path?: string;
 
   @IsOptional()
+  @IsString()
+  base64?: string; // Imagem em formato base64 (com ou sem prefixo data:image/...)
+
+  @IsOptional()
   @ValidateNested()
   @Type(() => TextStyleDto)
   style?: TextStyleDto;

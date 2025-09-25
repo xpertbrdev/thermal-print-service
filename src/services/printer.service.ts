@@ -8,6 +8,7 @@ import { PrinterConfigDto, PrinterType, InterfaceType } from '../dto/printer-con
 @Injectable()
 export class PrinterService {
   private readonly logger = new Logger(PrinterService.name);
+  private currentPrinterId: string = '';
 
   constructor(
     private readonly configService: ConfigService,
@@ -26,6 +27,7 @@ export class PrinterService {
 
   async print(printRequest: PrintRequestDto): Promise<{ success: boolean; message: string, buffer?: string }> {
     try {
+      this.currentPrinterId = printRequest.printerId || 'default';
       const printerConfig = await this.getPrinterConfiguration(printRequest.printerId);
       const printer = await this.createPrinterInstance(printerConfig);
       
@@ -245,22 +247,42 @@ export class PrinterService {
   }
 
   private async processImageItem(printer: ThermalPrinter, item: ContentItemDto): Promise<void> {
-    if (!item.path) {
-      this.logger.warn('Caminho da imagem não fornecido');
+    if (!item.path && !item.base64) {
+      this.logger.warn('Caminho da imagem ou base64 não fornecido');
       return;
     }
 
     try {
-      // Processar imagem (download se for URL, validação se for local)
-      const processedImagePath = await this.imageService.processImageForPrinting(item.path);
+      let processedImagePath: string;
       
-      // Otimizar imagem para impressão térmica (se necessário)
-      const optimizedImagePath = await this.imageService.optimizeImageForThermalPrinting(processedImagePath);
+      // Obter configuração da impressora para calcular largura em pixels
+      const printerConfig = await this.configService.getPrinterConfig(this.currentPrinterId);
+      const printerWidthPixels = this.imageService.calculatePrinterWidthInPixels(
+        printerConfig?.width || 48,
+        203 // DPI padrão para impressoras térmicas
+      );
+
+      if (item.base64) {
+        // Processar imagem base64
+        processedImagePath = await this.imageService.processBase64Image(
+          item.base64, 
+          printerWidthPixels
+        );
+      } else {
+        // Processar imagem por caminho/URL
+        processedImagePath = await this.imageService.processImageForPrinting(item.path!);
+        
+        // Otimizar para impressão térmica com largura correta
+        processedImagePath = await this.imageService.optimizeImageForThermalPrinting(
+          processedImagePath, 
+          printerWidthPixels
+        );
+      }
       
-      // Imprimir imagem
-      await printer.printImage(optimizedImagePath);
+      // Imprimir imagem otimizada
+      await printer.printImage(processedImagePath);
       
-      this.logger.log(`Imagem impressa com sucesso: ${item.path}`);
+      this.logger.log(`Imagem impressa com sucesso: ${item.path || 'base64'}`);
     } catch (error) {
       this.logger.error(`Erro ao imprimir imagem: ${error.message}`);
       throw new Error(`Falha ao imprimir imagem: ${error.message}`);

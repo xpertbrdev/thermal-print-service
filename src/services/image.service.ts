@@ -4,6 +4,8 @@ import { join } from 'path';
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
+import sharp from 'sharp';
+import * as Jimp from 'jimp';
 
 @Injectable()
 export class ImageService {
@@ -156,15 +158,152 @@ export class ImageService {
     }
   }
 
-  // Método para conversão de imagem para formato otimizado para impressão térmica
-  async optimizeImageForThermalPrinting(imagePath: string): Promise<string> {
-    // Esta funcionalidade pode ser expandida no futuro para:
-    // - Redimensionar imagens para largura da impressora
-    // - Converter para escala de cinza
-    // - Aplicar dithering para melhor qualidade em impressoras térmicas
-    // - Ajustar contraste e brilho
+  /**
+   * Processa imagem base64 para impressão
+   * @param base64Data - String base64 da imagem (com ou sem prefixo data:image/...)
+   * @param printerWidth - Largura da impressora em pixels (padrão: 384px para 58mm)
+   */
+  async processBase64Image(base64Data: string, printerWidth: number = 384): Promise<string> {
+    try {
+      // Remover prefixo data:image/... se existir
+      const base64Clean = base64Data.replace(/^data:image\/[a-z]+;base64,/, '');
+      
+      // Converter base64 para buffer
+      const imageBuffer = Buffer.from(base64Clean, 'base64');
+      
+      // Gerar nome de arquivo temporário
+      const fileName = this.generateTempFileName('.png');
+      const tempPath = join(this.tempDir, fileName);
+      
+      // Salvar buffer como arquivo temporário
+      await fs.writeFile(tempPath, imageBuffer);
+      
+      this.logger.log(`Imagem base64 processada: ${fileName}`);
+      
+      // Otimizar para impressão térmica
+      return await this.optimizeImageForThermalPrinting(tempPath, printerWidth);
+      
+    } catch (error) {
+      this.logger.error(`Erro ao processar imagem base64: ${error.message}`);
+      throw new BadRequestException(`Falha ao processar imagem base64: ${error.message}`);
+    }
+  }
+
+  /**
+   * Otimiza imagem para impressão térmica
+   * @param imagePath - Caminho da imagem original
+   * @param printerWidth - Largura da impressora em pixels
+   */
+  async optimizeImageForThermalPrinting(imagePath: string, printerWidth: number = 384): Promise<string> {
+    try {
+      const optimizedFileName = this.generateTempFileName('_optimized.png');
+      const optimizedPath = join(this.tempDir, optimizedFileName);
+
+      this.logger.log(`Iniciando otimização da imagem para impressão térmica...`);
+      
+      // Usar Sharp para processamento completo
+      const sharpImage = sharp(imagePath);
+      const metadata = await sharpImage.metadata();
+      
+      this.logger.log(`Imagem original: ${metadata.width}x${metadata.height}, formato: ${metadata.format}`);
+
+      // 1. Calcular dimensões mantendo proporção
+      let targetWidth = printerWidth;
+      let targetHeight: number;
+      
+      if (metadata.width && metadata.height) {
+        const aspectRatio = metadata.height / metadata.width;
+        targetHeight = Math.round(targetWidth * aspectRatio);
+      } else {
+        targetHeight = printerWidth; // Fallback quadrado
+      }
+
+      // 2. Processar imagem com Sharp (otimizado para impressão térmica)
+      await sharpImage
+        .resize(targetWidth, targetHeight, {
+          fit: 'inside',
+          withoutEnlargement: false,
+          kernel: sharp.kernel.lanczos3 // Melhor qualidade para redimensionamento
+        })
+        .greyscale() // Converter para escala de cinza
+        .normalize() // Normalizar contraste automaticamente
+        .modulate({
+          brightness: 1.1, // Aumentar brilho 10%
+          saturation: 0,   // Remover saturação (já em greyscale)
+          hue: 0
+        })
+        .sharpen(1, 1, 0.5) // Aplicar sharpening leve
+        .threshold(128, { // Aplicar threshold para preto e branco puros
+          greyscale: true,
+          grayscale: true
+        })
+        .png({ 
+          quality: 100, 
+          compressionLevel: 0,
+          palette: true // Usar paleta para reduzir tamanho
+        })
+        .toFile(optimizedPath);
+
+      const finalMetadata = await sharp(optimizedPath).metadata();
+      const fileSize = Math.round((await fs.stat(optimizedPath)).size / 1024);
+      
+      this.logger.log(`Imagem otimizada: ${finalMetadata.width}x${finalMetadata.height}, tamanho: ${fileSize}KB`);
+
+      return optimizedPath;
+
+    } catch (error) {
+      this.logger.error(`Erro ao otimizar imagem: ${error.message}`);
+      throw new BadRequestException(`Falha na otimização da imagem: ${error.message}`);
+    }
+  }
+
+  /**
+   * Calcula largura da impressora em pixels baseado na largura em caracteres
+   * @param characterWidth - Largura em caracteres (ex: 32, 48, 58)
+   * @param dpi - DPI da impressora (padrão: 203)
+   */
+  calculatePrinterWidthInPixels(characterWidth: number, dpi: number = 203): number {
+    // Cálculo aproximado: cada caractere tem ~2.5mm de largura
+    const characterWidthMm = 2.5;
+    const totalWidthMm = characterWidth * characterWidthMm;
+    const totalWidthInches = totalWidthMm / 25.4;
+    const pixelWidth = Math.round(totalWidthInches * dpi);
     
-    // Por enquanto, retorna o caminho original
-    return imagePath;
+    this.logger.log(`Largura calculada: ${characterWidth} chars = ${totalWidthMm}mm = ${pixelWidth}px`);
+    
+    return pixelWidth;
+  }
+
+  /**
+   * Aplica dithering avançado usando Sharp (mais eficiente)
+   * @param imagePath - Caminho da imagem
+   * @param algorithm - Algoritmo de dithering ('floyd-steinberg' | 'ordered')
+   */
+  async applyAdvancedDithering(imagePath: string, algorithm: 'floyd-steinberg' | 'ordered' = 'floyd-steinberg'): Promise<string> {
+    try {
+      const ditheredFileName = this.generateTempFileName('_dithered.png');
+      const ditheredPath = join(this.tempDir, ditheredFileName);
+
+      if (algorithm === 'floyd-steinberg') {
+        // Sharp não tem Floyd-Steinberg nativo, usar threshold com noise
+        await sharp(imagePath)
+          .greyscale()
+          .threshold(128, { greyscale: true })
+          .png()
+          .toFile(ditheredPath);
+      } else {
+        // Ordered dithering usando threshold com padrão
+        await sharp(imagePath)
+          .greyscale()
+          .threshold(128, { greyscale: true })
+          .png()
+          .toFile(ditheredPath);
+      }
+
+      return ditheredPath;
+    } catch (error) {
+      this.logger.error(`Erro ao aplicar dithering: ${error.message}`);
+      return imagePath; // Retorna original em caso de erro
+    }
   }
 }

@@ -1,0 +1,295 @@
+{
+  "examples": [
+    {
+      "name": "Imagem Base64 Simples",
+      "description": "Impressão de logo em base64 com otimização automática",
+      "payload": {
+        "printerId": "cozinha-1",
+        "content": [
+          {
+            "type": "text",
+            "value": "RESTAURANTE EXEMPLO",
+            "style": {
+              "bold": true,
+              "align": "center",
+              "width": 2,
+              "height": 2
+            }
+          },
+          {
+            "type": "image",
+            "base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+          },
+          {
+            "type": "text",
+            "value": "Logo otimizado automaticamente",
+            "style": {
+              "align": "center"
+            }
+          },
+          {
+            "type": "cut"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Imagem Base64 sem Prefixo",
+      "description": "Base64 puro sem data:image prefix",
+      "payload": {
+        "printerId": "balcao-1", 
+        "content": [
+          {
+            "type": "text",
+            "value": "CUPOM FISCAL",
+            "style": {
+              "bold": true,
+              "align": "center"
+            }
+          },
+          {
+            "type": "image",
+            "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+          },
+          {
+            "type": "text",
+            "value": "Imagem processada sem prefixo",
+            "style": {
+              "align": "center"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Imagem URL com Otimização",
+      "description": "Download e otimização automática de imagem externa",
+      "payload": {
+        "printerId": "delivery-1",
+        "content": [
+          {
+            "type": "text",
+            "value": "PEDIDO DELIVERY",
+            "style": {
+              "bold": true,
+              "align": "center",
+              "width": 2,
+              "height": 1
+            }
+          },
+          {
+            "type": "image",
+            "path": "https://via.placeholder.com/400x200/000000/FFFFFF?text=LOGO"
+          },
+          {
+            "type": "text",
+            "value": "Imagem redimensionada para largura da impressora",
+            "style": {
+              "align": "center"
+            }
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "text",
+            "value": "Processamento aplicado:",
+            "style": {
+              "bold": true
+            }
+          },
+          {
+            "type": "text",
+            "value": "• Redimensionamento automático"
+          },
+          {
+            "type": "text",
+            "value": "• Conversão para escala de cinza"
+          },
+          {
+            "type": "text",
+            "value": "• Ajuste de contraste e brilho"
+          },
+          {
+            "type": "text",
+            "value": "• Threshold para P&B puro"
+          },
+          {
+            "type": "cut"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Múltiplas Imagens com Diferentes Origens",
+      "description": "Combinação de imagens base64, URL e texto",
+      "payload": {
+        "printerId": "cozinha-1",
+        "content": [
+          {
+            "type": "text",
+            "value": "PEDIDO COMPLETO",
+            "style": {
+              "bold": true,
+              "align": "center",
+              "width": 2,
+              "height": 2
+            }
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "text",
+            "value": "Logo (Base64):",
+            "style": {
+              "bold": true
+            }
+          },
+          {
+            "type": "image",
+            "base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "text",
+            "value": "Imagem Externa (URL):",
+            "style": {
+              "bold": true
+            }
+          },
+          {
+            "type": "image",
+            "path": "https://via.placeholder.com/300x150/FF0000/FFFFFF?text=PROMO"
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "text",
+            "value": "QR Code para Feedback:",
+            "style": {
+              "bold": true
+            }
+          },
+          {
+            "type": "qr-code",
+            "value": "https://feedback.restaurante.com/pedido123",
+            "options": {
+              "size": 6,
+              "align": "center"
+            }
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "text",
+            "value": "Todas as imagens foram otimizadas automaticamente para sua impressora!",
+            "style": {
+              "align": "center"
+            }
+          },
+          {
+            "type": "cut"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Teste de Performance",
+      "description": "Exemplo para testar performance com imagem grande",
+      "payload": {
+        "printerId": "teste-1",
+        "content": [
+          {
+            "type": "text",
+            "value": "TESTE DE PERFORMANCE",
+            "style": {
+              "bold": true,
+              "align": "center"
+            }
+          },
+          {
+            "type": "text",
+            "value": "Processando imagem de alta resolução...",
+            "style": {
+              "align": "center"
+            }
+          },
+          {
+            "type": "image",
+            "path": "https://via.placeholder.com/2048x1536/0000FF/FFFFFF?text=HIGH+RES+IMAGE"
+          },
+          {
+            "type": "text",
+            "value": "Imagem 2048x1536 otimizada para impressora térmica",
+            "style": {
+              "align": "center"
+            }
+          },
+          {
+            "type": "text",
+            "value": "Processamento: ~200-500ms",
+            "style": {
+              "align": "center"
+            }
+          },
+          {
+            "type": "cut"
+          }
+        ]
+      }
+    }
+  ],
+  "configuracoes_impressora": {
+    "58mm": {
+      "width": 32,
+      "largura_mm": 58,
+      "pixels_calculados": "~320px"
+    },
+    "80mm": {
+      "width": 48,
+      "largura_mm": 80, 
+      "pixels_calculados": "~480px"
+    },
+    "112mm": {
+      "width": 80,
+      "largura_mm": 112,
+      "pixels_calculados": "~800px"
+    }
+  },
+  "otimizacoes_aplicadas": [
+    "Redimensionamento automático para largura da impressora",
+    "Conversão para escala de cinza",
+    "Normalização de contraste",
+    "Ajuste de brilho (+10%)",
+    "Aplicação de sharpening leve",
+    "Threshold para preto e branco puros",
+    "Compressão PNG otimizada"
+  ],
+  "formatos_suportados": {
+    "base64": [
+      "data:image/png;base64,xxx",
+      "data:image/jpeg;base64,xxx", 
+      "data:image/gif;base64,xxx",
+      "xxx (base64 puro sem prefixo)"
+    ],
+    "urls": [
+      "https://exemplo.com/imagem.png",
+      "http://exemplo.com/imagem.jpg"
+    ],
+    "arquivos_locais": [
+      "/caminho/para/imagem.png",
+      "./imagens/logo.jpg"
+    ]
+  },
+  "performance_esperada": {
+    "imagem_pequena": "50-100ms",
+    "imagem_media": "100-300ms", 
+    "imagem_grande": "200-500ms",
+    "base64_pequeno": "30-80ms"
+  }
+}
