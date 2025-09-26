@@ -7,6 +7,7 @@ export enum ContentType {
   TABLE = 'table',
   BARCODE = 'barcode',
   QR_CODE = 'qr-code',
+  PDF = 'pdf',
   CUT = 'cut',
   BEEP = 'beep',
   CASH_DRAWER = 'cash-drawer',
@@ -144,6 +145,20 @@ export class ContentItemDto {
   @ValidateNested()
   @Type(() => QrCodeDto)
   qrCode?: QrCodeDto;
+
+  // PDF content
+  @IsOptional()
+  @IsString()
+  pdf?: string; // base64, file path, ou URL
+
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  pages?: number[]; // Páginas específicas
+
+  @IsOptional()
+  @IsNumber()
+  quality?: number; // Qualidade da conversão
 
   @IsOptional()
   @IsString()

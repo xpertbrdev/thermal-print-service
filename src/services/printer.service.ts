@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ThermalPrinter, PrinterTypes, CharacterSet } from 'node-thermal-printer';
 import { ConfigService } from './config.service';
 import { ImageService } from './image.service';
+import { PdfService } from './pdf.service';
 import { PrintRequestDto, ContentItemDto, ContentType, TextAlign } from '../dto/print.dto';
 import { PrinterConfigDto, PrinterType, InterfaceType } from '../dto/printer-config.dto';
 
@@ -12,7 +13,8 @@ export class PrinterService {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly imageService: ImageService
+    private readonly imageService: ImageService,
+    private readonly pdfService: PdfService
   ) {}
 
   /**
@@ -293,6 +295,9 @@ export class PrinterService {
       case ContentType.QR_CODE:
         this.processQRCodeItem(printer, item);
         break;
+      case ContentType.PDF:
+        await this.processPdfItem(printer, item);
+        break;
       case ContentType.CUT:
         printer.cut();
         break;
@@ -566,6 +571,62 @@ export class PrinterService {
     } catch (error) {
       this.logger.error(`Erro ao imprimir QR Code: ${error.message}`);
       throw new Error(`Falha ao imprimir QR Code: ${error.message}`);
+    }
+  }
+
+  /**
+   * Processa item PDF convertendo para imagens otimizadas
+   */
+  private async processPdfItem(printer: ThermalPrinter, item: ContentItemDto): Promise<void> {
+    if (!item.pdf) {
+      this.logger.warn('Item PDF sem conteúdo PDF especificado');
+      return;
+    }
+
+    try {
+      this.logger.log('Processando PDF para impressão');
+
+      // Processar PDF usando PdfService
+      const result = await this.pdfService.processPdf(item.pdf, {
+        printerId: this.currentPrinterId,
+        quality: item.quality || 100,
+        pages: item.pages, // Páginas específicas se especificado
+        format: 'png', // Sempre PNG para melhor qualidade
+      });
+
+      if (!result.success || result.images.length === 0) {
+        const errorMsg = `Falha no processamento do PDF: ${result.errors.join(', ')}`;
+        this.logger.error(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      this.logger.log(`PDF convertido em ${result.images.length} imagens otimizadas`);
+
+      // Imprimir cada página como imagem
+      for (let i = 0; i < result.images.length; i++) {
+        const imagePath = result.images[i];
+        this.logger.log(`Imprimindo página ${i + 1}/${result.images.length}: ${imagePath}`);
+
+        try {
+          // Usar método de impressão de imagem existente
+          await printer.printImage(imagePath);
+          
+          // Adicionar quebra de linha entre páginas (exceto na última)
+          if (i < result.images.length - 1) {
+            printer.newLine();
+            printer.newLine(); // Espaço extra entre páginas
+          }
+        } catch (imageError) {
+          this.logger.error(`Erro ao imprimir página ${i + 1}: ${imageError.message}`);
+          throw new Error(`Falha ao imprimir página ${i + 1} do PDF: ${imageError.message}`);
+        }
+      }
+
+      this.logger.log(`PDF impresso com sucesso: ${result.processedPages} páginas em ${result.processingTime}ms`);
+
+    } catch (error) {
+      this.logger.error(`Erro ao processar PDF: ${error.message}`);
+      throw new Error(`Falha ao processar PDF: ${error.message}`);
     }
   }
 }

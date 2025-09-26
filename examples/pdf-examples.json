@@ -1,0 +1,358 @@
+{
+  "pdf_processing_examples": {
+    "description": "Exemplos práticos de uso do PDF Service",
+    
+    "1_pdf_base64_simples": {
+      "endpoint": "POST /pdf/process",
+      "description": "Processar PDF base64 simples",
+      "payload": {
+        "printerId": "cozinha-1",
+        "pdf": "data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDw8Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKNCAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVApxCjAgMCAwIHJnCjAgMCAwIFJHCjU2LjY5MyA3ODUuMTk3IG0KNTYuNjkzIDc0MS4yNzMgbApTCkVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyNDUgMDAwMDAgbgp0cmFpbGVyCjw8Ci9TaXplIDUKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjMzOQolJUVPRg==",
+        "quality": 100,
+        "format": "png"
+      }
+    },
+
+    "2_pdf_paginas_especificas": {
+      "endpoint": "POST /pdf/process", 
+      "description": "Processar apenas páginas específicas do PDF",
+      "payload": {
+        "printerId": "juridico-1",
+        "pdf": "/path/to/contrato-multipaginas.pdf",
+        "pages": [1, 2, 5],
+        "quality": 95,
+        "density": 225
+      }
+    },
+
+    "3_pdf_url_publica": {
+      "endpoint": "POST /pdf/process",
+      "description": "Processar PDF de URL pública",
+      "payload": {
+        "printerId": "relatorios-1", 
+        "pdf": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+        "quality": 100,
+        "format": "jpeg"
+      }
+    },
+
+    "4_pdf_alta_qualidade": {
+      "endpoint": "POST /pdf/process",
+      "description": "Processamento com alta qualidade para impressora 112mm",
+      "payload": {
+        "printerId": "impressora-112mm",
+        "pdf": "data:application/pdf;base64,JVBERi0xLjQ...",
+        "quality": 100,
+        "density": 300,
+        "format": "png",
+        "priority": "high"
+      }
+    }
+  },
+
+  "pdf_info_examples": {
+    "description": "Exemplos de obtenção de informações do PDF",
+
+    "1_info_pdf_base64": {
+      "endpoint": "POST /pdf/info",
+      "description": "Obter informações de PDF base64",
+      "payload": {
+        "pdf": "data:application/pdf;base64,JVBERi0xLjQ..."
+      }
+    },
+
+    "2_info_pdf_arquivo": {
+      "endpoint": "POST /pdf/info", 
+      "description": "Obter informações de arquivo PDF local",
+      "payload": {
+        "pdf": "/path/to/documento.pdf"
+      }
+    },
+
+    "3_info_pdf_url": {
+      "endpoint": "POST /pdf/info",
+      "description": "Obter informações de PDF via URL",
+      "payload": {
+        "pdf": "https://exemplo.com/documento.pdf"
+      }
+    }
+  },
+
+  "pdf_integration_examples": {
+    "description": "Exemplos de integração do PDF com impressão",
+
+    "1_cupom_com_pdf": {
+      "endpoint": "POST /print/session",
+      "description": "Cupom fiscal com PDF anexo",
+      "payload": {
+        "printerId": "fiscal-1",
+        "content": [
+          {
+            "type": "text",
+            "value": "CUPOM FISCAL ELETRÔNICO",
+            "style": {"bold": true, "align": "center"}
+          },
+          {
+            "type": "line"
+          },
+          {
+            "type": "pdf",
+            "pdf": "data:application/pdf;base64,JVBERi0xLjQ...",
+            "quality": 100
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "text",
+            "value": "Via do Cliente",
+            "style": {"align": "center"}
+          },
+          {
+            "type": "cut"
+          }
+        ]
+      }
+    },
+
+    "2_relatorio_multipagina": {
+      "endpoint": "POST /print/session",
+      "description": "Relatório com múltiplas páginas PDF",
+      "payload": {
+        "printerId": "relatorios-1",
+        "content": [
+          {
+            "type": "text",
+            "value": "RELATÓRIO MENSAL DE VENDAS",
+            "style": {"bold": true, "align": "center", "width": 2, "height": 2}
+          },
+          {
+            "type": "text",
+            "value": "Período: Janeiro 2024",
+            "style": {"align": "center"}
+          },
+          {
+            "type": "line"
+          },
+          {
+            "type": "pdf",
+            "pdf": "/reports/vendas-janeiro-2024.pdf",
+            "pages": [1, 2, 3, 4],
+            "quality": 95
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "text",
+            "value": "Gerado em: " + new Date().toLocaleString(),
+            "style": {"align": "right"}
+          },
+          {
+            "type": "cut"
+          }
+        ]
+      }
+    },
+
+    "3_documento_juridico": {
+      "endpoint": "POST /print/session",
+      "description": "Documento jurídico com cabeçalho e PDF",
+      "payload": {
+        "printerId": "juridico-1",
+        "content": [
+          {
+            "type": "image",
+            "base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+          },
+          {
+            "type": "text",
+            "value": "ESCRITÓRIO ADVOCACIA & ASSOCIADOS",
+            "style": {"bold": true, "align": "center"}
+          },
+          {
+            "type": "text",
+            "value": "OAB/SP 123.456",
+            "style": {"align": "center"}
+          },
+          {
+            "type": "line"
+          },
+          {
+            "type": "text",
+            "value": "CONTRATO DE PRESTAÇÃO DE SERVIÇOS",
+            "style": {"bold": true, "align": "center", "underline": true}
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "pdf",
+            "pdf": "https://servidor.juridico.com/contratos/contrato-123.pdf",
+            "quality": 100,
+            "format": "png"
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "table",
+            "table": {
+              "headers": ["Campo", "Valor"],
+              "rows": [
+                {"cells": ["Protocolo", "2024-001234"]},
+                {"cells": ["Data", "15/01/2024"]},
+                {"cells": ["Advogado", "Dr. João Silva"]}
+              ]
+            }
+          },
+          {
+            "type": "cut"
+          }
+        ]
+      }
+    },
+
+    "4_comprovante_com_anexo": {
+      "endpoint": "POST /print/session",
+      "description": "Comprovante de pagamento com PDF anexo",
+      "payload": {
+        "printerId": "financeiro-1",
+        "content": [
+          {
+            "type": "text",
+            "value": "COMPROVANTE DE PAGAMENTO",
+            "style": {"bold": true, "align": "center"}
+          },
+          {
+            "type": "line"
+          },
+          {
+            "type": "table",
+            "table": {
+              "headers": ["Descrição", "Valor"],
+              "rows": [
+                {"cells": ["Valor Principal", "R$ 1.500,00"]},
+                {"cells": ["Juros", "R$ 15,00"]},
+                {"cells": ["Total Pago", "R$ 1.515,00"]}
+              ]
+            }
+          },
+          {
+            "type": "new-line"
+          },
+          {
+            "type": "text",
+            "value": "DOCUMENTO ANEXO:",
+            "style": {"bold": true}
+          },
+          {
+            "type": "pdf",
+            "pdf": "/financeiro/comprovantes/pix-123456.pdf",
+            "pages": [1],
+            "quality": 100
+          },
+          {
+            "type": "qr-code",
+            "value": "PIX-COMPROVANTE-123456",
+            "options": {
+              "size": 6,
+              "align": "center"
+            }
+          },
+          {
+            "type": "cut"
+          }
+        ]
+      }
+    }
+  },
+
+  "pdf_test_examples": {
+    "description": "Exemplos de teste e validação",
+
+    "1_teste_basico": {
+      "endpoint": "GET /pdf/test",
+      "description": "Teste básico com PDF de exemplo",
+      "query_params": {
+        "printerId": "teste-1"
+      }
+    },
+
+    "2_info_servico": {
+      "endpoint": "GET /pdf/info",
+      "description": "Obter informações do serviço PDF"
+    },
+
+    "3_estatisticas": {
+      "endpoint": "GET /pdf/stats", 
+      "description": "Obter estatísticas do serviço"
+    },
+
+    "4_limpeza_temporarios": {
+      "endpoint": "POST /pdf/cleanup",
+      "description": "Limpeza de arquivos temporários",
+      "query_params": {
+        "maxAgeHours": 12
+      }
+    }
+  },
+
+  "pdf_troubleshooting": {
+    "description": "Exemplos para resolução de problemas",
+
+    "1_validar_pdf": {
+      "description": "Validar se PDF é válido antes do processamento",
+      "steps": [
+        "POST /pdf/info com o PDF",
+        "Verificar se retorna informações válidas",
+        "Se falhar, PDF pode estar corrompido"
+      ]
+    },
+
+    "2_testar_impressora": {
+      "description": "Testar se impressora está configurada",
+      "steps": [
+        "GET /config/printers para listar impressoras",
+        "GET /print/test-connection?printerId=xxx",
+        "POST /pdf/test?printerId=xxx"
+      ]
+    },
+
+    "3_debug_processamento": {
+      "description": "Debug de problemas de processamento",
+      "steps": [
+        "Usar PDF pequeno primeiro (1 página)",
+        "Verificar logs do servidor",
+        "Testar com quality=50 e density=150",
+        "Verificar espaço em disco disponível"
+      ]
+    }
+  },
+
+  "pdf_performance_tips": {
+    "description": "Dicas de performance e otimização",
+
+    "1_otimizacao_qualidade": {
+      "small_pdfs": "quality: 100, density: 203",
+      "medium_pdfs": "quality: 95, density: 180", 
+      "large_pdfs": "quality: 85, density: 150"
+    },
+
+    "2_formato_recomendado": {
+      "text_documents": "format: png (melhor qualidade)",
+      "images_photos": "format: jpeg (menor tamanho)",
+      "mixed_content": "format: png (padrão)"
+    },
+
+    "3_paginas_especificas": {
+      "description": "Use 'pages' para processar apenas páginas necessárias",
+      "example": "pages: [1, 3, 5] ao invés de todas as páginas"
+    },
+
+    "4_limpeza_automatica": {
+      "description": "Configure limpeza automática para evitar acúmulo",
+      "recommendation": "POST /pdf/cleanup a cada 6-12 horas"
+    }
+  }
+}

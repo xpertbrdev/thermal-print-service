@@ -11,6 +11,8 @@ import { SessionService } from '../services/session.service';
 import { MonitoringService } from '../services/monitoring.service';
 import { EscPosTestService } from '../services/escpos-test.service';
 import { EscPosTestController } from '../controllers/escpos-test.controller';
+import { PdfService } from '../services/pdf.service';
+import { PdfController } from '../controllers/pdf.controller';
 
 @Module({
   controllers: [
@@ -18,7 +20,8 @@ import { EscPosTestController } from '../controllers/escpos-test.controller';
     ConfigController, 
     PrintSessionController,
     MonitoringController,
-    EscPosTestController
+    EscPosTestController,
+    PdfController
   ],
   providers: [
     PrinterService, 
@@ -27,7 +30,8 @@ import { EscPosTestController } from '../controllers/escpos-test.controller';
     QueueService,
     SessionService,
     MonitoringService,
-    EscPosTestService
+    EscPosTestService,
+    PdfService
   ],
   exports: [
     PrinterService, 
@@ -36,7 +40,8 @@ import { EscPosTestController } from '../controllers/escpos-test.controller';
     QueueService,
     SessionService,
     MonitoringService,
-    EscPosTestService
+    EscPosTestService,
+    PdfService
   ],
 })
 export class PrinterModule {}
