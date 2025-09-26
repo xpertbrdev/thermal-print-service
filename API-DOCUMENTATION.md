@@ -757,3 +757,50 @@ MIT License - Veja [LICENSE](LICENSE) para detalhes.
 **Microservice de Impressão Térmica - Solução Completa e Profissional!**
 
 *Desenvolvido com ❤️ para a comunidade de desenvolvedores*
+
+
+
+### 6. PROCESSAMENTO DE PDF
+
+#### POST /pdf/process
+Processa um arquivo PDF e o converte em imagens para impressão.
+
+**Payload de exemplo:**
+```json
+{
+  "printerId": "cozinha-1",
+  "pdf": "data:application/pdf;base64,JVBERi0xLjQK...",
+  "quality": 95,
+  "format": "png"
+}
+```
+
+**Parâmetros:**
+- `printerId` (string, obrigatório): ID da impressora.
+- `pdf` (string, obrigatório): PDF em base64, caminho de arquivo ou URL.
+- `quality` (number, opcional): Qualidade da imagem gerada (1-100).
+- `format` (string, opcional): Formato da imagem (`png` ou `jpeg`).
+
+#### POST /pdf/info
+Obtém informações sobre um arquivo PDF.
+
+**Payload de exemplo:**
+```json
+{
+  "pdf": "/path/to/document.pdf"
+}
+```
+
+#### GET /pdf/stats
+Retorna estatísticas do serviço de PDF, como o número de arquivos temporários e o espaço em disco utilizado.
+
+#### POST /pdf/cleanup
+Executa a limpeza de arquivos temporários gerados pelo serviço de PDF.
+
+**Payload de exemplo:**
+```json
+{
+  "maxAgeHours": 24
+}
+```
+

@@ -122,7 +122,7 @@ export class PrinterService {
   }
 
   async processJobAsync(job: any): Promise<void> {
-    const printerConfig = await this.getPrinterConfiguration(job.printerId);
+    const printerConfig = await this.getPrinterConfig(job.printerId);
     const printer = await this.createPrinterInstance(printerConfig);
     
     await this.processPrintContent(printer, job.content);
@@ -134,7 +134,7 @@ export class PrinterService {
   async print(printRequest: PrintRequestDto): Promise<{ success: boolean; message: string, buffer?: string }> {
     try {
       this.currentPrinterId = printRequest.printerId || 'default';
-      const printerConfig = await this.getPrinterConfiguration(printRequest.printerId);
+      const printerConfig = await this.getPrinterConfig(printRequest.printerId);
       const printer = await this.createPrinterInstance(printerConfig);
       
       await this.processPrintContent(printer, printRequest.content);
@@ -168,7 +168,7 @@ export class PrinterService {
 
   async testConnection(printerId?: string): Promise<{ connected: boolean; printer: string }> {
     try {
-      const printerConfig = await this.getPrinterConfiguration(printerId);
+      const printerConfig = await this.getPrinterConfig(printerId);
       const printer = await this.createPrinterInstance(printerConfig);
       
       const isConnected = await printer.isPrinterConnected();
@@ -186,7 +186,7 @@ export class PrinterService {
     }
   }
 
-  private async getPrinterConfiguration(printerId?: string): Promise<PrinterConfigDto> {
+  private async getPrinterConfig(printerId?: string): Promise<PrinterConfigDto> {
     if (printerId) {
       const config = await this.configService.getPrinterConfig(printerId);
       if (!config) {

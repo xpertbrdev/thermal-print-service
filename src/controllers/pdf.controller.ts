@@ -1,17 +1,6 @@
 import { Controller, Post, Get, Body, Query, Param, Logger } from '@nestjs/common';
 import { PdfService, PdfProcessingOptions } from '../services/pdf.service';
-
-export class ProcessPdfDto {
-  printerId: string;
-  pdf: string; // Base64, file path, or URL
-  pages?: number[];
-  quality?: number;
-  format?: 'png' | 'jpeg';
-}
-
-export class PdfInfoDto {
-  pdf: string; // Base64, file path, or URL
-}
+import { ProcessPdfDto, PdfInfoDto, CleanupDto } from '../dto/pdf.dto';
 
 @Controller('pdf')
 export class PdfController {
@@ -135,11 +124,11 @@ export class PdfController {
    * Limpeza de arquivos temporários
    */
   @Post('cleanup')
-  async cleanupTempFiles(@Body() body: { maxAgeHours?: number } = {}) {
+  async cleanupTempFiles(@Body() cleanupDto: CleanupDto) {
     this.logger.log('Iniciando limpeza de arquivos temporários...');
 
     try {
-      const maxAge = body.maxAgeHours || 12;
+      const maxAge = cleanupDto.maxAgeHours || 12;
       const result = await this.pdfService.cleanupTempFiles(maxAge);
 
       return {
