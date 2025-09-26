@@ -30,6 +30,28 @@ export enum CharacterSetType {
   KOREA = 'KOREA'
 }
 
+export class AdvancedPrintAreaDto {
+  @IsOptional()
+  @IsNumber()
+  startXMm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  startYMm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  widthMm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  heightMm?: number;
+
+  @IsOptional()
+  @IsNumber()
+  dpi?: number;
+}
+
 export class PrinterConfigDto {
   @IsString()
   id: string;
@@ -65,6 +87,11 @@ export class PrinterConfigDto {
   @IsOptional()
   @IsNumber()
   timeout?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AdvancedPrintAreaDto)
+  advancedPrintArea?: AdvancedPrintAreaDto;
 }
 
 export class PrinterConfigRequestDto {

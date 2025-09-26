@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { pdfToPng } from 'pdf-to-png-converter';
+// import { pdfToPng } from 'pdf-to-png-converter'; // Removido - usando pdf-to-img agora
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';

@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Body, Query, Param, Logger } from '@nestjs/common';
-import { PdfService, PdfProcessingOptions } from '../services/pdf.service';
-import { PdfStandaloneService } from '../services/pdf-standalone.service';
+// import { PdfService, PdfProcessingOptions } from '../services/pdf.service';
+// import { PdfStandaloneService } from '../services/pdf-standalone.service';
+import { PdfV3Service, PdfProcessingOptions } from '../services/pdf-v3.service';
 import { ProcessPdfDto, PdfInfoDto, CleanupDto } from '../dto/pdf.dto';
 
 @Controller('pdf')
@@ -8,8 +9,7 @@ export class PdfController {
   private readonly logger = new Logger(PdfController.name);
 
   constructor(
-    private readonly pdfService: PdfService,
-    private readonly pdfStandaloneService: PdfStandaloneService,
+    private readonly pdfV3Service: PdfV3Service,
   ) {}
 
   /**
@@ -26,31 +26,12 @@ export class PdfController {
         pages: processDto.pages,
       };
 
-      // Tentar primeiro com o serviço principal
-      let result = await this.pdfService.processPdfForThermalPrinting(
+      // Usar o novo serviço v3 (mais confiável e simples)
+      const result = await this.pdfV3Service.processPdfForThermalPrinting(
         processDto.pdf,
         processDto.printerId,
         options,
       );
-
-      // Se falhar com timeout ou erro de conexão, usar serviço standalone
-      if (!result.success && (
-        result.error?.includes('timeout') || 
-        result.error?.includes('Socket timeout') ||
-        result.error?.includes('connection')
-      )) {
-        this.logger.warn(`Serviço principal falhou, tentando standalone: ${result.error}`);
-        
-        const standaloneResult = await this.pdfStandaloneService.processPdfToImages(
-          processDto.pdf,
-          options,
-        );
-
-        result = {
-          ...standaloneResult,
-          optimizedPaths: standaloneResult.outputPaths, // Usar paths originais como otimizados
-        };
-      }
 
       return {
         success: result.success,
@@ -68,42 +49,12 @@ export class PdfController {
       };
 
     } catch (error) {
-      this.logger.error(`Erro no processamento PDF: ${error.message}`);
-      
-      // Última tentativa com serviço standalone
-      try {
-        this.logger.log(`Tentativa final com serviço standalone...`);
-        const standaloneResult = await this.pdfStandaloneService.processPdfToImages(
-          processDto.pdf,
-          {
-            quality: processDto.quality || 95,
-            format: processDto.format || 'png',
-            pages: processDto.pages,
-          },
-        );
-
-        return {
-          success: standaloneResult.success,
-          message: standaloneResult.success 
-            ? `PDF processado com sucesso (modo standalone): ${standaloneResult.processedPages} páginas`
-            : `Falha no processamento standalone: ${standaloneResult.error}`,
-          data: {
-            processedPages: standaloneResult.processedPages,
-            totalPages: standaloneResult.totalPages,
-            processingTime: standaloneResult.processingTime,
-            outputPaths: standaloneResult.outputPaths,
-            optimizedPaths: standaloneResult.outputPaths,
-          },
-          error: standaloneResult.error,
-        };
-      } catch (standaloneError) {
-        this.logger.error(`Erro no processamento standalone: ${standaloneError.message}`);
-        return {
-          success: false,
-          message: `Erro interno: ${error.message}`,
-          error: error.message,
-        };
-      }
+      this.logger.error(`Erro no processamento PDF V3: ${error.message}`);
+      return {
+        success: false,
+        message: `Erro interno: ${error.message}`,
+        error: error.message,
+      };
     }
   }
 
@@ -115,7 +66,7 @@ export class PdfController {
     this.logger.log('Obtendo informações do PDF...');
 
     try {
-      const info = await this.pdfService.getPdfInfo(infoDto.pdf);
+      const info = await this.pdfV3Service.getPdfInfo(infoDto.pdf);
 
       return {
         success: true,
@@ -144,7 +95,7 @@ export class PdfController {
     const testPdfBase64 = 'JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDw8Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKNCAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVApxCjAgMCAwIHJnCjAgMCAwIFJHCjU2LjY5MyA3ODUuMTk3IG0KNTYuNjkzIDc0MS4yNzMgbApTCkVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyNDUgMDAwMDAgbgp0cmFpbGVyCjw8Ci9TaXplIDUKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjMzOQolJUVPRg==';
 
     try {
-      const result = await this.pdfService.processPdfForThermalPrinting(
+      const result = await this.pdfV3Service.processPdfForThermalPrinting(
         `data:application/pdf;base64,${testPdfBase64}`,
         printerId,
         { quality: 100 },
@@ -183,7 +134,7 @@ export class PdfController {
 
     try {
       const maxAge = cleanupDto.maxAgeHours || 12;
-      const result = await this.pdfService.cleanupTempFiles(maxAge);
+      const result = await this.pdfV3Service.cleanupTempFiles(maxAge);
 
       return {
         success: true,
@@ -213,7 +164,7 @@ export class PdfController {
     this.logger.log('Obtendo estatísticas do serviço PDF...');
 
     try {
-      const stats = this.pdfService.getServiceStats();
+      const stats = this.pdfV3Service.getServiceStats();
 
       return {
         success: true,
@@ -240,9 +191,9 @@ export class PdfController {
       success: true,
       message: 'Serviço PDF ativo',
       data: {
-        service: 'PDF Processing Service',
-        version: '2.0.0',
-        engine: 'pdf-to-png-converter',
+        service: 'PDF Processing Service V3',
+        version: '3.0.0',
+        engine: 'pdf-to-img',
         externalDependencies: false,
         features: [
           'PDF Base64 support',
@@ -252,6 +203,8 @@ export class PdfController {
           'Quality control',
           'Thermal optimization',
           'Automatic cleanup',
+          'Simple and reliable conversion',
+          'Memory efficient processing',
           'Zero external dependencies'
         ],
         endpoints: [

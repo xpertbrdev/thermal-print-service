@@ -2,7 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ThermalPrinter, PrinterTypes, CharacterSet } from 'node-thermal-printer';
 import { ConfigService } from './config.service';
 import { ImageService } from './image.service';
-import { PdfService } from './pdf.service';
+import { PdfV3Service } from './pdf-v3.service';
 import { PrintRequestDto, ContentItemDto, ContentType, TextAlign } from '../dto/print.dto';
 import { PrinterConfigDto, PrinterType, InterfaceType } from '../dto/printer-config.dto';
 
@@ -14,7 +14,7 @@ export class PrinterService {
   constructor(
     private readonly configService: ConfigService,
     private readonly imageService: ImageService,
-    private readonly pdfService: PdfService
+    private readonly pdfV3Service: PdfV3Service
   ) {}
 
   /**
@@ -222,6 +222,18 @@ export class PrinterService {
 
     // Configurar área de impressão via comandos ESC/POS
     this.configurePrintableArea(printer, config);
+
+    // Se configuração avançada estiver disponível, usar comando ESC W
+    if (config.advancedPrintArea) {
+      this.setPrintableAreaAdvanced(
+        printer,
+        config.advancedPrintArea.startXMm || 0,
+        config.advancedPrintArea.startYMm || 0,
+        config.advancedPrintArea.widthMm || config.printableWidth || config.width || 80,
+        config.advancedPrintArea.heightMm || 200,
+        config.advancedPrintArea.dpi || 203
+      );
+    }
 
     return printer;
   }
@@ -586,8 +598,8 @@ export class PrinterService {
     try {
       this.logger.log('Processando PDF para impressão');
 
-      // Processar PDF usando PdfService
-      const result = await this.pdfService.processPdfForThermalPrinting(
+      // Processar PDF usando PdfV3Service
+      const result = await this.pdfV3Service.processPdfForThermalPrinting(
         item.pdf,
         this.currentPrinterId,
         {
