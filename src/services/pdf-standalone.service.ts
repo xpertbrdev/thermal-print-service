@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from './config.service';
-import { ImageService } from './image.service';
 import { pdfToPng } from 'pdf-to-png-converter';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -21,7 +19,6 @@ export interface PdfProcessingResult {
   totalPages: number;
   processingTime: number;
   outputPaths: string[];
-  optimizedPaths?: string[];
   error?: string;
 }
 
@@ -39,64 +36,35 @@ export interface PdfInfo {
 }
 
 @Injectable()
-export class PdfService {
-  private readonly logger = new Logger(PdfService.name);
-  private readonly tempDir = '/tmp/thermal-printer-pdf';
+export class PdfStandaloneService {
+  private readonly logger = new Logger(PdfStandaloneService.name);
+  private readonly tempDir = '/tmp/thermal-printer-pdf-standalone';
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly imageService: ImageService,
-  ) {
+  constructor() {
     this.ensureTempDirectory();
   }
 
   /**
-   * Processar PDF para impressão térmica usando pdf-to-png-converter (sem dependências externas)
+   * Processar PDF para imagens PNG (sem dependência de impressora)
    */
-  async processPdfForThermalPrinting(
+  async processPdfToImages(
     pdfInput: string | Buffer,
-    printerId: string,
     options: PdfProcessingOptions = {},
   ): Promise<PdfProcessingResult> {
     const startTime = Date.now();
-    this.logger.log(`Iniciando processamento PDF para impressora: ${printerId}`);
+    this.logger.log(`Iniciando processamento PDF standalone`);
 
     try {
-      // 1. Preparar PDF buffer (isolado de conexões de rede)
+      // 1. Preparar PDF buffer
       const pdfBuffer = await this.preparePdfBuffer(pdfInput);
       this.logger.log(`PDF preparado: ${pdfBuffer.length} bytes`);
 
-      // 2. Obter configuração da impressora (sem testar conexão)
-      const printerConfig = await this.configService.getPrinterConfig(printerId);
-      if (!printerConfig) {
-        throw new Error(`Impressora não encontrada: ${printerId}`);
-      }
-
-      // 3. Calcular configurações otimizadas
-      const processingOptions = this.calculateOptimalSettings(printerConfig, options);
-      this.logger.log(`Configurações calculadas:`, processingOptions);
-
-      // 4. Converter PDF para PNG (processo isolado, sem conexão com impressora)
-      this.logger.log(`Iniciando conversão PDF→PNG (processo isolado)`);
-      const pngPages = await this.convertPdfToPng(pdfBuffer, processingOptions);
+      // 2. Converter PDF para PNG
+      const pngPages = await this.convertPdfToPngStandalone(pdfBuffer, options);
       this.logger.log(`Conversão concluída: ${pngPages.length} páginas`);
 
-      // 5. Otimizar imagens para impressão térmica (processo local)
-      let optimizedPaths: string[] = [];
-      try {
-        this.logger.log(`Iniciando otimização de imagens...`);
-        optimizedPaths = await this.optimizeImagesForThermalPrinting(
-          pngPages.map(page => page.path),
-          printerConfig,
-        );
-        this.logger.log(`Otimização concluída: ${optimizedPaths.length} imagens`);
-      } catch (optimizationError) {
-        this.logger.warn(`Falha na otimização, usando imagens originais: ${optimizationError.message}`);
-        optimizedPaths = pngPages.map(page => page.path);
-      }
-
       const processingTime = Date.now() - startTime;
-      this.logger.log(`Processamento PDF concluído em ${processingTime}ms`);
+      this.logger.log(`Processamento PDF standalone concluído em ${processingTime}ms`);
 
       return {
         success: true,
@@ -104,12 +72,11 @@ export class PdfService {
         totalPages: pngPages.length,
         processingTime,
         outputPaths: pngPages.map(page => page.path),
-        optimizedPaths,
       };
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      this.logger.error(`Erro no processamento PDF: ${error.message}`);
+      this.logger.error(`Erro no processamento PDF standalone: ${error.message}`);
       
       return {
         success: false,
@@ -141,20 +108,33 @@ export class PdfService {
       }
 
       try {
-        // Converter apenas para contar páginas (sem salvar)
+        // Converter apenas primeira página para contar total
         const pngPages = await pdfToPng(pdfBuffer, {
           outputFolder: tempFolder,
           outputFileMaskFunc: (pageNumber) => `info_page_${pageNumber}`,
-          pagesToProcess: [-1] // Todas as páginas
+          pagesToProcess: [1] // Apenas primeira página
         });
 
+        // Tentar obter total de páginas
+        let totalPages = 1;
+        try {
+          const allPages = await pdfToPng(pdfBuffer, {
+            outputFolder: tempFolder,
+            outputFileMaskFunc: (pageNumber) => `count_page_${pageNumber}`,
+            pagesToProcess: [-1] // Todas as páginas
+          });
+          totalPages = allPages.length;
+        } catch (countError) {
+          this.logger.warn(`Não foi possível contar todas as páginas: ${countError.message}`);
+        }
+
         const info: PdfInfo = {
-          pages: pngPages.length,
+          pages: totalPages,
           size: pdfBuffer.length,
           format: 'PDF',
           title: 'Documento PDF',
           creator: 'pdf-to-png-converter',
-          producer: 'Thermal Printer Microservice',
+          producer: 'Thermal Printer Microservice Standalone',
           creationDate: new Date(),
           modificationDate: new Date(),
         };
@@ -217,11 +197,11 @@ export class PdfService {
   }
 
   /**
-   * Converter PDF para PNG usando pdf-to-png-converter
+   * Converter PDF para PNG (versão standalone sem dependências externas)
    */
-  private async convertPdfToPng(
+  private async convertPdfToPngStandalone(
     pdfBuffer: Buffer,
-    options: any,
+    options: PdfProcessingOptions,
   ): Promise<Array<{ path: string; name: string }>> {
     const tempId = this.generateTempId();
     const tempFolder = path.join(this.tempDir, tempId);
@@ -234,120 +214,58 @@ export class PdfService {
     this.logger.log(`Convertendo PDF para PNG na pasta: ${tempFolder}`);
 
     try {
-      // Configurações otimizadas para evitar timeout
+      // Configurações otimizadas e isoladas
       const pdfOptions = {
         outputFolder: tempFolder,
         outputFileMaskFunc: (pageNumber: number) => `page_${pageNumber}`,
         pagesToProcess: options.pages || [-1], // -1 = todas as páginas
-        // Configurações adicionais para estabilidade
+        // Configurações para máxima compatibilidade
         disableFontFace: true,
         useSystemFonts: false,
         viewportScale: 1.0,
-        outputFilesFormat: 'png'
+        outputFilesFormat: 'png' as const,
+        // Configurações de qualidade
+        pngQuality: options.quality || 95,
+        density: options.density || 150,
       };
 
-      this.logger.log(`Iniciando conversão com opções:`, pdfOptions);
+      this.logger.log(`Iniciando conversão standalone com timeout de 60s`);
 
-      // Executar conversão com timeout personalizado
+      // Executar conversão com timeout mais longo para PDFs complexos
       const conversionPromise = pdfToPng(pdfBuffer, pdfOptions);
-      const timeoutPromise = new Promise((_, reject) => {
+      const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Timeout na conversão PDF - operação cancelada após 30 segundos'));
-        }, 30000); // 30 segundos de timeout
+          reject(new Error('Timeout na conversão PDF - operação cancelada após 60 segundos'));
+        }, 60000); // 60 segundos de timeout
       });
 
-      const pngPages = await Promise.race([conversionPromise, timeoutPromise]) as Array<{ path: string; name: string }>;
+      const pngPages = await Promise.race([conversionPromise, timeoutPromise]);
 
-      this.logger.log(`Conversão concluída: ${pngPages.length} páginas geradas`);
+      this.logger.log(`Conversão standalone concluída: ${pngPages.length} páginas geradas`);
       return pngPages;
 
     } catch (error) {
-      this.logger.error(`Erro na conversão PDF→PNG: ${error.message}`);
+      this.logger.error(`Erro na conversão PDF→PNG standalone: ${error.message}`);
       
       // Limpar pasta temporária em caso de erro
       this.cleanupTempFolder(tempFolder);
       
       // Tratar diferentes tipos de erro
-      if (error.message.includes('Socket timeout') || error.message.includes('timeout')) {
-        throw new Error(`Timeout na conversão PDF - verifique o tamanho do arquivo e a conectividade`);
+      if (error.message.includes('timeout')) {
+        throw new Error(`Timeout na conversão PDF - arquivo muito complexo ou grande`);
       } else if (error.message.includes('Invalid PDF')) {
         throw new Error(`PDF inválido ou corrompido`);
       } else {
-        throw new Error(`Falha na conversão: ${error.message}`);
+        throw new Error(`Falha na conversão standalone: ${error.message}`);
       }
     }
-  }
-
-  /**
-   * Calcular configurações otimizadas baseadas na impressora
-   */
-  private calculateOptimalSettings(printerConfig: any, options: PdfProcessingOptions): any {
-    // Calcular DPI baseado na largura da impressora
-    let optimalDpi = 203; // Padrão
-    if (printerConfig.width <= 58) {
-      optimalDpi = 180; // 58mm
-    } else if (printerConfig.width <= 80) {
-      optimalDpi = 203; // 80mm
-    } else {
-      optimalDpi = 225; // 112mm+
-    }
-
-    // Calcular largura em pixels
-    const widthMm = printerConfig.printableWidth || printerConfig.width || 80;
-    const widthPx = Math.round((widthMm / 25.4) * optimalDpi);
-
-    return {
-      quality: options.quality || 95,
-      density: options.density || optimalDpi,
-      format: options.format || 'png',
-      pages: options.pages,
-      width: options.width || widthPx,
-      height: options.height, // Deixar automático baseado na proporção
-    };
-  }
-
-  /**
-   * Otimizar imagens para impressão térmica
-   */
-  private async optimizeImagesForThermalPrinting(
-    imagePaths: string[],
-    printerConfig: any,
-  ): Promise<string[]> {
-    const optimizedPaths: string[] = [];
-
-    for (const imagePath of imagePaths) {
-      try {
-        this.logger.log(`Otimizando imagem: ${imagePath}`);
-        
-        // Usar largura em pixels baseada na configuração da impressora
-        const printerWidthMm = printerConfig.printableWidth || printerConfig.width || 80;
-        const dpi = 203; // DPI padrão para impressoras térmicas
-        const widthPixels = Math.round((printerWidthMm / 25.4) * dpi);
-        
-        // Chamar otimização com largura em pixels ao invés do ID da impressora
-        const optimizedPath = await this.imageService.optimizeImageForThermalPrinting(
-          imagePath,
-          widthPixels,
-        );
-        
-        optimizedPaths.push(optimizedPath);
-        this.logger.log(`Imagem otimizada salva: ${optimizedPath}`);
-        
-      } catch (error) {
-        this.logger.warn(`Falha ao otimizar ${imagePath}: ${error.message}`);
-        // Usar imagem original se otimização falhar
-        optimizedPaths.push(imagePath);
-      }
-    }
-
-    return optimizedPaths;
   }
 
   /**
    * Limpeza de arquivos temporários
    */
   async cleanupTempFiles(maxAgeHours: number = 12): Promise<{ cleaned: number; errors: number }> {
-    this.logger.log(`Iniciando limpeza de arquivos temporários (idade máxima: ${maxAgeHours}h)`);
+    this.logger.log(`Iniciando limpeza de arquivos temporários standalone (idade máxima: ${maxAgeHours}h)`);
     
     let cleaned = 0;
     let errors = 0;
@@ -384,7 +302,7 @@ export class PdfService {
       errors++;
     }
 
-    this.logger.log(`Limpeza concluída: ${cleaned} pastas removidas, ${errors} erros`);
+    this.logger.log(`Limpeza standalone concluída: ${cleaned} pastas removidas, ${errors} erros`);
     return { cleaned, errors };
   }
 
@@ -421,8 +339,8 @@ export class PdfService {
     }
 
     return {
-      service: 'PdfService',
-      version: '2.0.0',
+      service: 'PdfStandaloneService',
+      version: '1.0.0',
       engine: 'pdf-to-png-converter',
       externalDependencies: false,
       tempDirectory: this.tempDir,
@@ -435,9 +353,9 @@ export class PdfService {
         'URL download support',
         'Page selection',
         'Quality control',
-        'Thermal optimization',
-        'Automatic cleanup',
-        'Zero external dependencies'
+        'Isolated processing',
+        'Extended timeout handling',
+        'Zero printer dependencies'
       ]
     };
   }
@@ -448,12 +366,12 @@ export class PdfService {
   private ensureTempDirectory(): void {
     if (!fs.existsSync(this.tempDir)) {
       fs.mkdirSync(this.tempDir, { recursive: true });
-      this.logger.log(`Diretório temporário criado: ${this.tempDir}`);
+      this.logger.log(`Diretório temporário standalone criado: ${this.tempDir}`);
     }
   }
 
   private generateTempId(): string {
-    return `pdf_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    return `pdf_standalone_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
   }
 
   private isBase64(str: string): boolean {

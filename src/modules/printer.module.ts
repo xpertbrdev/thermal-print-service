@@ -12,6 +12,7 @@ import { MonitoringService } from '../services/monitoring.service';
 import { EscPosTestService } from '../services/escpos-test.service';
 import { EscPosTestController } from '../controllers/escpos-test.controller';
 import { PdfService } from '../services/pdf.service';
+import { PdfStandaloneService } from '../services/pdf-standalone.service';
 import { PdfController } from '../controllers/pdf.controller';
 
 @Module({
@@ -31,7 +32,8 @@ import { PdfController } from '../controllers/pdf.controller';
     SessionService,
     MonitoringService,
     EscPosTestService,
-    PdfService
+    PdfService,
+    PdfStandaloneService
   ],
   exports: [
     PrinterService, 
@@ -41,7 +43,8 @@ import { PdfController } from '../controllers/pdf.controller';
     SessionService,
     MonitoringService,
     EscPosTestService,
-    PdfService
+    PdfService,
+    PdfStandaloneService
   ],
 })
 export class PrinterModule {}

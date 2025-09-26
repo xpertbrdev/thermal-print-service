@@ -1,12 +1,16 @@
 import { Controller, Post, Get, Body, Query, Param, Logger } from '@nestjs/common';
 import { PdfService, PdfProcessingOptions } from '../services/pdf.service';
+import { PdfStandaloneService } from '../services/pdf-standalone.service';
 import { ProcessPdfDto, PdfInfoDto, CleanupDto } from '../dto/pdf.dto';
 
 @Controller('pdf')
 export class PdfController {
   private readonly logger = new Logger(PdfController.name);
 
-  constructor(private readonly pdfService: PdfService) {}
+  constructor(
+    private readonly pdfService: PdfService,
+    private readonly pdfStandaloneService: PdfStandaloneService,
+  ) {}
 
   /**
    * Processar PDF para impressão térmica
@@ -22,11 +26,31 @@ export class PdfController {
         pages: processDto.pages,
       };
 
-      const result = await this.pdfService.processPdfForThermalPrinting(
+      // Tentar primeiro com o serviço principal
+      let result = await this.pdfService.processPdfForThermalPrinting(
         processDto.pdf,
         processDto.printerId,
         options,
       );
+
+      // Se falhar com timeout ou erro de conexão, usar serviço standalone
+      if (!result.success && (
+        result.error?.includes('timeout') || 
+        result.error?.includes('Socket timeout') ||
+        result.error?.includes('connection')
+      )) {
+        this.logger.warn(`Serviço principal falhou, tentando standalone: ${result.error}`);
+        
+        const standaloneResult = await this.pdfStandaloneService.processPdfToImages(
+          processDto.pdf,
+          options,
+        );
+
+        result = {
+          ...standaloneResult,
+          optimizedPaths: standaloneResult.outputPaths, // Usar paths originais como otimizados
+        };
+      }
 
       return {
         success: result.success,
@@ -45,11 +69,41 @@ export class PdfController {
 
     } catch (error) {
       this.logger.error(`Erro no processamento PDF: ${error.message}`);
-      return {
-        success: false,
-        message: `Erro interno: ${error.message}`,
-        error: error.message,
-      };
+      
+      // Última tentativa com serviço standalone
+      try {
+        this.logger.log(`Tentativa final com serviço standalone...`);
+        const standaloneResult = await this.pdfStandaloneService.processPdfToImages(
+          processDto.pdf,
+          {
+            quality: processDto.quality || 95,
+            format: processDto.format || 'png',
+            pages: processDto.pages,
+          },
+        );
+
+        return {
+          success: standaloneResult.success,
+          message: standaloneResult.success 
+            ? `PDF processado com sucesso (modo standalone): ${standaloneResult.processedPages} páginas`
+            : `Falha no processamento standalone: ${standaloneResult.error}`,
+          data: {
+            processedPages: standaloneResult.processedPages,
+            totalPages: standaloneResult.totalPages,
+            processingTime: standaloneResult.processingTime,
+            outputPaths: standaloneResult.outputPaths,
+            optimizedPaths: standaloneResult.outputPaths,
+          },
+          error: standaloneResult.error,
+        };
+      } catch (standaloneError) {
+        this.logger.error(`Erro no processamento standalone: ${standaloneError.message}`);
+        return {
+          success: false,
+          message: `Erro interno: ${error.message}`,
+          error: error.message,
+        };
+      }
     }
   }
 
