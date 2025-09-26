@@ -57,6 +57,7 @@ export class ConfigService {
     return config.defaultSettings || {
       charPerLine: 48, // Caracteres por linha padrão
       width: 80, // Largura física padrão em mm
+      printableWidth: 72, // Área de impressão útil padrão em mm
       characterSet: 'PC852_LATIN2',
       timeout: 5000,
       margins: {
@@ -92,6 +93,7 @@ export class ConfigService {
           address: '192.168.1.100',
           charPerLine: 48, // 48 caracteres por linha
           width: 80, // 80mm de largura física
+          printableWidth: 72, // 72mm de área de impressão útil
           characterSet: 'PC852_LATIN2' as any,
           timeout: 5000
         }
@@ -99,6 +101,7 @@ export class ConfigService {
       defaultSettings: {
         charPerLine: 48, // Padrão: 48 caracteres por linha
         width: 80, // Padrão: 80mm de largura física
+        printableWidth: 72, // Padrão: 72mm de área de impressão útil
         characterSet: 'PC852_LATIN2' as any,
         timeout: 5000,
         margins: {

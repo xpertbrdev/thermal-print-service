@@ -1,0 +1,338 @@
+{
+  "description": "Configurações com área de impressão corrigida para eliminar margens",
+  "problema_resolvido": "Impressão não iniciava na margem 0, ficando com ~5-6mm de espaçamento",
+  "solucao": "Usar área de impressão útil ao invés da largura total do papel",
+  
+  "especificacoes_impressoras": {
+    "58mm": {
+      "width": 58,
+      "printableWidth": 48,
+      "marginMm": 5,
+      "pixels_total": 465,
+      "pixels_uteis": 384,
+      "melhoria": "Elimina margem de 5mm"
+    },
+    "80mm": {
+      "width": 80,
+      "printableWidth": 72,
+      "marginMm": 4,
+      "pixels_total": 640,
+      "pixels_uteis": 576,
+      "melhoria": "Elimina margem de 4mm"
+    },
+    "112mm": {
+      "width": 112,
+      "printableWidth": 104,
+      "marginMm": 4,
+      "pixels_total": 896,
+      "pixels_uteis": 832,
+      "melhoria": "Elimina margem de 4mm"
+    }
+  },
+
+  "configuracoes_corrigidas": [
+    {
+      "name": "Configuração Impressora 58mm - Sem Margem",
+      "payload": {
+        "printers": [
+          {
+            "id": "cupom-58mm",
+            "name": "Impressora Cupons 58mm",
+            "type": "epson",
+            "connectionType": "network",
+            "address": "192.168.1.101",
+            "charPerLine": 32,
+            "width": 58,
+            "printableWidth": 48,
+            "characterSet": "PC852_LATIN2",
+            "timeout": 5000
+          }
+        ],
+        "defaultSettings": {
+          "charPerLine": 32,
+          "width": 58,
+          "printableWidth": 48,
+          "characterSet": "PC852_LATIN2",
+          "timeout": 5000,
+          "margins": { "top": 0, "bottom": 0, "left": 0, "right": 0 },
+          "spacing": { "lineHeight": 1, "paragraphSpacing": 1 }
+        }
+      }
+    },
+    {
+      "name": "Configuração Impressora 80mm - Sem Margem",
+      "payload": {
+        "printers": [
+          {
+            "id": "recibo-80mm",
+            "name": "Impressora Recibos 80mm",
+            "type": "star",
+            "connectionType": "network",
+            "address": "192.168.1.102",
+            "charPerLine": 48,
+            "width": 80,
+            "printableWidth": 72,
+            "characterSet": "PC850_MULTILINGUAL",
+            "timeout": 5000
+          }
+        ],
+        "defaultSettings": {
+          "charPerLine": 48,
+          "width": 80,
+          "printableWidth": 72,
+          "characterSet": "PC850_MULTILINGUAL",
+          "timeout": 5000,
+          "margins": { "top": 0, "bottom": 0, "left": 0, "right": 0 },
+          "spacing": { "lineHeight": 1, "paragraphSpacing": 1 }
+        }
+      }
+    },
+    {
+      "name": "Configuração Impressora 112mm - Sem Margem",
+      "payload": {
+        "printers": [
+          {
+            "id": "relatorio-112mm",
+            "name": "Impressora Relatórios 112mm",
+            "type": "brother",
+            "connectionType": "usb",
+            "address": "/dev/usb/lp0",
+            "charPerLine": 80,
+            "width": 112,
+            "printableWidth": 104,
+            "characterSet": "PC437_USA",
+            "timeout": 8000
+          }
+        ],
+        "defaultSettings": {
+          "charPerLine": 80,
+          "width": 112,
+          "printableWidth": 104,
+          "characterSet": "PC437_USA",
+          "timeout": 8000,
+          "margins": { "top": 0, "bottom": 0, "left": 0, "right": 0 },
+          "spacing": { "lineHeight": 1, "paragraphSpacing": 2 }
+        }
+      }
+    },
+    {
+      "name": "Configuração Múltiplas Impressoras - Todas Sem Margem",
+      "payload": {
+        "printers": [
+          {
+            "id": "cozinha-80mm",
+            "name": "Impressora Cozinha 80mm",
+            "type": "epson",
+            "connectionType": "network",
+            "address": "192.168.1.101",
+            "charPerLine": 48,
+            "width": 80,
+            "printableWidth": 72,
+            "characterSet": "PC852_LATIN2",
+            "timeout": 5000
+          },
+          {
+            "id": "balcao-58mm",
+            "name": "Impressora Balcão 58mm",
+            "type": "tanca",
+            "connectionType": "network",
+            "address": "192.168.1.102",
+            "charPerLine": 32,
+            "width": 58,
+            "printableWidth": 48,
+            "characterSet": "PC860_PORTUGUESE",
+            "timeout": 5000
+          },
+          {
+            "id": "delivery-112mm",
+            "name": "Impressora Delivery 112mm",
+            "type": "daruma",
+            "connectionType": "serial",
+            "address": "/dev/ttyUSB0",
+            "charPerLine": 80,
+            "width": 112,
+            "printableWidth": 104,
+            "characterSet": "PC858_EURO",
+            "timeout": 8000
+          }
+        ],
+        "defaultSettings": {
+          "charPerLine": 48,
+          "width": 80,
+          "printableWidth": 72,
+          "characterSet": "PC852_LATIN2",
+          "timeout": 5000,
+          "margins": { "top": 0, "bottom": 0, "left": 0, "right": 0 },
+          "spacing": { "lineHeight": 1, "paragraphSpacing": 1 }
+        }
+      }
+    }
+  ],
+
+  "exemplos_impressao_sem_margem": [
+    {
+      "name": "Teste Imagem 58mm - Sem Margem",
+      "printerId": "cupom-58mm",
+      "content": [
+        {
+          "type": "text",
+          "value": "TESTE MARGEM ZERO - 58mm",
+          "style": { "bold": true, "align": "center" }
+        },
+        {
+          "type": "image",
+          "base64": "data:image/png;base64,iVBORw0KGgo...",
+          "description": "Imagem será redimensionada para 384px (48mm úteis) - SEM MARGEM"
+        },
+        {
+          "type": "text",
+          "value": "Área útil: 48mm (384px)",
+          "style": { "align": "center" }
+        },
+        { "type": "cut" }
+      ]
+    },
+    {
+      "name": "Teste Imagem 80mm - Sem Margem",
+      "printerId": "recibo-80mm",
+      "content": [
+        {
+          "type": "text",
+          "value": "TESTE MARGEM ZERO - 80mm",
+          "style": { "bold": true, "align": "center", "width": 2 }
+        },
+        {
+          "type": "image",
+          "path": "https://exemplo.com/logo.png",
+          "description": "Imagem será redimensionada para 576px (72mm úteis) - SEM MARGEM"
+        },
+        {
+          "type": "table",
+          "table": {
+            "headers": ["Item", "Valor"],
+            "rows": [
+              { "cells": ["Teste Margem", "R$ 0,00"] }
+            ],
+            "columns": [
+              { "width": 32, "align": "left" },
+              { "width": 12, "align": "right" }
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "Área útil: 72mm (576px)",
+          "style": { "align": "center" }
+        },
+        { "type": "cut" }
+      ]
+    },
+    {
+      "name": "Teste Imagem 112mm - Sem Margem",
+      "printerId": "relatorio-112mm",
+      "content": [
+        {
+          "type": "text",
+          "value": "TESTE MARGEM ZERO - 112mm",
+          "style": { "bold": true, "align": "center", "width": 2, "height": 2 }
+        },
+        {
+          "type": "image",
+          "base64": "data:image/png;base64,iVBORw0KGgo...",
+          "description": "Imagem será redimensionada para 832px (104mm úteis) - SEM MARGEM"
+        },
+        {
+          "type": "table",
+          "table": {
+            "headers": ["Produto", "Qtd", "Valor Unit", "Total"],
+            "rows": [
+              { "cells": ["Teste Margem Zero", "1", "R$ 0,00", "R$ 0,00"] }
+            ],
+            "columns": [
+              { "width": 40, "align": "left" },
+              { "width": 8, "align": "center" },
+              { "width": 12, "align": "right" },
+              { "width": 12, "align": "right" }
+            ]
+          }
+        },
+        {
+          "type": "qr-code",
+          "value": "https://teste-margem-zero.com",
+          "options": { "size": 8, "align": "center" }
+        },
+        {
+          "type": "text",
+          "value": "Área útil: 104mm (832px)",
+          "style": { "align": "center" }
+        },
+        { "type": "cut" }
+      ]
+    }
+  ],
+
+  "comparacao_antes_depois": {
+    "impressora_58mm": {
+      "antes": {
+        "calculo": "58mm total → 465px",
+        "resultado": "Margem de ~5mm nas laterais",
+        "area_util_real": "48mm (384px)"
+      },
+      "depois": {
+        "calculo": "48mm útil → 384px",
+        "resultado": "SEM MARGEM - impressão na borda",
+        "area_util_real": "48mm (384px)"
+      },
+      "melhoria": "Elimina 5mm de margem desnecessária"
+    },
+    "impressora_80mm": {
+      "antes": {
+        "calculo": "80mm total → 640px",
+        "resultado": "Margem de ~4mm nas laterais",
+        "area_util_real": "72mm (576px)"
+      },
+      "depois": {
+        "calculo": "72mm útil → 576px",
+        "resultado": "SEM MARGEM - impressão na borda",
+        "area_util_real": "72mm (576px)"
+      },
+      "melhoria": "Elimina 4mm de margem desnecessária"
+    },
+    "impressora_112mm": {
+      "antes": {
+        "calculo": "112mm total → 896px",
+        "resultado": "Margem de ~4mm nas laterais",
+        "area_util_real": "104mm (832px)"
+      },
+      "depois": {
+        "calculo": "104mm útil → 832px",
+        "resultado": "SEM MARGEM - impressão na borda",
+        "area_util_real": "104mm (832px)"
+      },
+      "melhoria": "Elimina 4mm de margem desnecessária"
+    }
+  },
+
+  "configuracao_automatica": {
+    "description": "Sistema detecta automaticamente a área útil baseado na largura",
+    "fallback": "Se printableWidth não for especificado, usa 90% da largura total",
+    "specs_automaticas": {
+      "58mm": "printableWidth = 48mm (automático)",
+      "80mm": "printableWidth = 72mm (automático)", 
+      "112mm": "printableWidth = 104mm (automático)",
+      "outros": "printableWidth = width * 0.9 (90% da largura)"
+    }
+  },
+
+  "logs_esperados": [
+    "[ImageService] Área de impressão: 80mm total → 72mm útil = 576px (203 DPI)",
+    "[PrinterService] Usando área de impressão útil: 72mm (576px)",
+    "[ImageService] Imagem redimensionada: 1200x800 → 576x384 (mantendo proporção)"
+  ],
+
+  "validacao": {
+    "teste_visual": "Imprimir imagem que ocupe toda largura - deve chegar até as bordas",
+    "teste_medida": "Medir distância da borda do papel até início da impressão - deve ser 0mm",
+    "teste_comparativo": "Comparar com configuração antiga - diferença visível de ~4-5mm"
+  }
+}

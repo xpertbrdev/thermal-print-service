@@ -255,12 +255,15 @@ export class PrinterService {
     try {
       let processedImagePath: string;
       
-      // Obter configuração da impressora para calcular largura em pixels
+      // Obter configuração da impressora para calcular área de impressão útil
       const printerConfig = await this.configService.getPrinterConfig(this.currentPrinterId);
       const printerWidthMm = printerConfig?.width || 80; // Largura física padrão: 80mm
-      const printerWidthPixels = this.imageService.calculatePrinterWidthInPixels(
+      
+      // Usar área de impressão útil (sem margens físicas) para redimensionamento correto
+      const printerWidthPixels = this.imageService.calculatePrintableAreaInPixels(
         printerWidthMm,
-        203 // DPI padrão para impressoras térmicas
+        203, // DPI padrão para impressoras térmicas
+        printerConfig?.printableWidth // Largura customizada se configurada
       );
 
       if (item.base64) {

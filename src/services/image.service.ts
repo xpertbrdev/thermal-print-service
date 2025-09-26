@@ -272,6 +272,53 @@ export class ImageService {
   }
 
   /**
+   * Calcula área de impressão útil em pixels (sem margens físicas da impressora)
+   * @param printerWidthMm - Largura física da impressora em mm
+   * @param dpi - DPI da impressora (padrão: 203)
+   * @param customPrintableWidth - Largura de impressão customizada (opcional)
+   */
+  calculatePrintableAreaInPixels(
+    printerWidthMm: number, 
+    dpi: number = 203,
+    customPrintableWidth?: number
+  ): number {
+    let printableWidthMm: number;
+    
+    if (customPrintableWidth) {
+      printableWidthMm = customPrintableWidth;
+    } else {
+      const specs = this.getPrinterSpecs(printerWidthMm);
+      printableWidthMm = specs.printableWidth;
+    }
+    
+    const printableWidthInches = printableWidthMm / 25.4;
+    const pixelWidth = Math.round(printableWidthInches * dpi);
+    
+    this.logger.log(`Área de impressão: ${printerWidthMm}mm total → ${printableWidthMm}mm útil = ${pixelWidth}px (${dpi} DPI)`);
+    
+    return pixelWidth;
+  }
+
+  /**
+   * Obtém especificações da impressora baseado na largura
+   * @param widthMm - Largura da impressora em mm
+   */
+  private getPrinterSpecs(widthMm: number): { printableWidth: number; marginMm: number; totalWidth: number } {
+    const specs = {
+      58: { printableWidth: 48, marginMm: 5, totalWidth: 58 },
+      80: { printableWidth: 72, marginMm: 4, totalWidth: 80 },
+      112: { printableWidth: 104, marginMm: 4, totalWidth: 112 }
+    };
+    
+    // Retornar especificação exata ou calcular baseado em 90% da largura
+    return specs[widthMm] || {
+      printableWidth: Math.round(widthMm * 0.9), // 90% como área útil
+      marginMm: Math.round(widthMm * 0.05), // 5% de margem cada lado
+      totalWidth: widthMm
+    };
+  }
+
+  /**
    * Calcula largura da impressora em pixels baseado em caracteres (método legado)
    * @param characterWidth - Largura em caracteres (ex: 32, 48, 58)
    * @param dpi - DPI da impressora (padrão: 203)
