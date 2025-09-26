@@ -1,0 +1,291 @@
+{
+  "description": "Exemplos de teste para comandos ESC/POS de margem e área de impressão",
+  "objetivo": "Validar se os comandos ESC/POS estão eliminando as margens físicas da impressora",
+  
+  "comandos_implementados": {
+    "ESC_l_0": {
+      "hex": "1B 6C 00",
+      "descricao": "Define margem esquerda = 0",
+      "funcao": "Elimina margem esquerda"
+    },
+    "ESC_Q_0": {
+      "hex": "1B 51 00", 
+      "descricao": "Define margem direita = 0",
+      "funcao": "Elimina margem direita"
+    },
+    "ESC_W": {
+      "hex": "1B 57 xL xH yL yH dxL dxH dyL dyH",
+      "descricao": "Define área de impressão customizada",
+      "funcao": "Controle total da área de impressão"
+    }
+  },
+
+  "configuracoes_teste": [
+    {
+      "name": "Teste Margem Zero - Impressora 58mm",
+      "config": {
+        "printers": [
+          {
+            "id": "teste-58mm-zero",
+            "name": "Teste 58mm Margem Zero",
+            "type": "epson",
+            "connectionType": "network",
+            "address": "192.168.1.100",
+            "charPerLine": 32,
+            "width": 58,
+            "printableWidth": 58,
+            "characterSet": "PC852_LATIN2",
+            "timeout": 5000
+          }
+        ]
+      },
+      "comandos_esperados": [
+        "ESC l 0 (1B 6C 00) - Margem esquerda zero",
+        "ESC Q 0 (1B 51 00) - Margem direita zero"
+      ],
+      "resultado_esperado": "Impressão ocupando toda largura do papel (58mm)"
+    },
+    {
+      "name": "Teste Margem Zero - Impressora 80mm",
+      "config": {
+        "printers": [
+          {
+            "id": "teste-80mm-zero",
+            "name": "Teste 80mm Margem Zero",
+            "type": "star",
+            "connectionType": "network", 
+            "address": "192.168.1.101",
+            "charPerLine": 48,
+            "width": 80,
+            "printableWidth": 80,
+            "characterSet": "PC850_MULTILINGUAL",
+            "timeout": 5000
+          }
+        ]
+      },
+      "comandos_esperados": [
+        "ESC l 0 (1B 6C 00) - Margem esquerda zero",
+        "ESC Q 0 (1B 51 00) - Margem direita zero"
+      ],
+      "resultado_esperado": "Impressão ocupando toda largura do papel (80mm)"
+    },
+    {
+      "name": "Teste Área Customizada - Impressora 80mm",
+      "config": {
+        "printers": [
+          {
+            "id": "teste-80mm-custom",
+            "name": "Teste 80mm Área Customizada",
+            "type": "brother",
+            "connectionType": "usb",
+            "address": "/dev/usb/lp0",
+            "charPerLine": 48,
+            "width": 80,
+            "printableWidth": 72,
+            "characterSet": "PC437_USA",
+            "timeout": 5000
+          }
+        ]
+      },
+      "comandos_esperados": [
+        "ESC l 10 (1B 6C 0A) - Margem esquerda 4mm (~10 units)",
+        "ESC Q 10 (1B 51 0A) - Margem direita 4mm (~10 units)"
+      ],
+      "resultado_esperado": "Impressão centralizada com 72mm úteis (4mm margem cada lado)"
+    }
+  ],
+
+  "testes_impressao": [
+    {
+      "name": "Teste Visual Margem Zero",
+      "printerId": "teste-80mm-zero",
+      "content": [
+        {
+          "type": "text",
+          "value": "TESTE MARGEM ZERO",
+          "style": { "bold": true, "align": "center", "width": 2 }
+        },
+        {
+          "type": "text",
+          "value": "Esta linha deve ocupar toda largura",
+          "style": { "align": "left" }
+        },
+        {
+          "type": "text",
+          "value": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+          "style": { "align": "left" }
+        },
+        {
+          "type": "image",
+          "base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          "description": "Imagem teste - deve ocupar toda largura sem margem"
+        },
+        {
+          "type": "text",
+          "value": "Se há espaço nas bordas, comandos ESC/POS não funcionaram",
+          "style": { "align": "center" }
+        },
+        { "type": "cut" }
+      ]
+    },
+    {
+      "name": "Teste Comparativo - Com e Sem Comandos",
+      "printerId": "teste-80mm-zero",
+      "content": [
+        {
+          "type": "text",
+          "value": "TESTE COMPARATIVO",
+          "style": { "bold": true, "align": "center" }
+        },
+        {
+          "type": "text",
+          "value": "COM comandos ESC/POS (margem zero):",
+          "style": { "align": "left" }
+        },
+        {
+          "type": "text",
+          "value": "||||||||||||||||||||||||||||||||||||||||||||||||",
+          "style": { "align": "left" }
+        },
+        {
+          "type": "text",
+          "value": "Deve chegar até as bordas do papel",
+          "style": { "align": "center" }
+        },
+        { "type": "new-line" },
+        {
+          "type": "text",
+          "value": "SEM comandos ESC/POS (margem padrão):",
+          "style": { "align": "left" }
+        },
+        {
+          "type": "text",
+          "value": "    ||||||||||||||||||||||||||||||||||||||||    ",
+          "style": { "align": "left" }
+        },
+        {
+          "type": "text",
+          "value": "Teria espaços nas bordas",
+          "style": { "align": "center" }
+        },
+        { "type": "cut" }
+      ]
+    },
+    {
+      "name": "Teste Imagem Largura Máxima",
+      "printerId": "teste-80mm-zero",
+      "content": [
+        {
+          "type": "text",
+          "value": "TESTE IMAGEM LARGURA MÁXIMA",
+          "style": { "bold": true, "align": "center" }
+        },
+        {
+          "type": "text",
+          "value": "Imagem deve ocupar 80mm completos:",
+          "style": { "align": "center" }
+        },
+        {
+          "type": "image",
+          "path": "https://via.placeholder.com/800x200/000000/FFFFFF?text=TESTE+LARGURA+MAXIMA",
+          "description": "Imagem será redimensionada para 640px (80mm) - deve ocupar toda largura"
+        },
+        {
+          "type": "text",
+          "value": "Se há bordas brancas, área não está configurada",
+          "style": { "align": "center" }
+        },
+        { "type": "cut" }
+      ]
+    },
+    {
+      "name": "Teste QR Code Centralizado",
+      "printerId": "teste-80mm-zero",
+      "content": [
+        {
+          "type": "text",
+          "value": "TESTE QR CODE",
+          "style": { "bold": true, "align": "center" }
+        },
+        {
+          "type": "qr-code",
+          "value": "https://teste-margem-zero.com/escpos",
+          "options": { "size": 8, "align": "center" }
+        },
+        {
+          "type": "text",
+          "value": "QR Code deve estar perfeitamente centralizado",
+          "style": { "align": "center" }
+        },
+        { "type": "cut" }
+      ]
+    }
+  ],
+
+  "validacao_visual": {
+    "checklist": [
+      "✅ Texto chega até a borda esquerda do papel",
+      "✅ Texto chega até a borda direita do papel", 
+      "✅ Imagens ocupam toda largura disponível",
+      "✅ Não há espaços em branco nas laterais",
+      "✅ QR codes ficam perfeitamente centralizados",
+      "✅ Tabelas usam toda largura útil"
+    ],
+    "medidas": [
+      "📏 Medir distância da borda até início da impressão = 0mm",
+      "📏 Medir largura total da impressão = largura do papel",
+      "📏 Comparar com impressão sem comandos ESC/POS"
+    ]
+  },
+
+  "logs_esperados": [
+    "[PrinterService] Configurando área de impressão para teste-80mm-zero",
+    "[PrinterService] Margens zeradas - usando área máxima de impressão", 
+    "[PrinterService] Comandos ESC/POS enviados: ESC l 0, ESC Q 0 (margens zero)",
+    "[ImageService] Área de impressão: 80mm total → 80mm útil = 640px (203 DPI)",
+    "[PrinterService] Imagem redimensionada para largura máxima: 640px"
+  ],
+
+  "troubleshooting": {
+    "problema_1": {
+      "sintoma": "Ainda há margem mesmo com comandos ESC/POS",
+      "causas_possiveis": [
+        "Impressora não suporta comandos ESC l/ESC Q",
+        "Comandos sendo ignorados pela impressora",
+        "Margem física mínima da impressora"
+      ],
+      "solucoes": [
+        "Testar comando ESC W (área de impressão avançada)",
+        "Verificar manual da impressora para comandos suportados",
+        "Testar com diferentes valores de margem"
+      ]
+    },
+    "problema_2": {
+      "sintoma": "Comandos não estão sendo enviados",
+      "causas_possiveis": [
+        "Erro na implementação do método raw()",
+        "Buffer não sendo enviado corretamente",
+        "Conexão com impressora falhando"
+      ],
+      "solucoes": [
+        "Verificar logs de debug",
+        "Testar conexão com impressora",
+        "Validar buffer de comandos"
+      ]
+    }
+  },
+
+  "comandos_debug": {
+    "verificar_buffer": "printer.getBuffer() - Ver comandos no buffer",
+    "testar_conexao": "printer.isPrinterConnected() - Verificar conexão",
+    "comando_manual": "printer.raw(Buffer.from([0x1B, 0x6C, 0x00])) - Teste manual"
+  },
+
+  "proximos_passos": [
+    "1. Configurar impressora de teste",
+    "2. Executar testes de margem zero",
+    "3. Validar visualmente os resultados",
+    "4. Ajustar comandos se necessário",
+    "5. Documentar resultados finais"
+  ]
+}

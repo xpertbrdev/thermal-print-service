@@ -15,6 +15,110 @@ export class PrinterService {
     private readonly imageService: ImageService
   ) {}
 
+  /**
+   * Configura área de impressão via comandos ESC/POS para eliminar margens físicas
+   * @param printer - Instância do ThermalPrinter
+   * @param config - Configuração da impressora
+   */
+  private configurePrintableArea(printer: ThermalPrinter, config: PrinterConfigDto): void {
+    this.logger.log(`Configurando área de impressão para ${config.name || config.id}`);
+    
+    if (config.printableWidth && config.width && config.printableWidth < config.width) {
+      // Calcular margem para centralizar área útil
+      const marginMm = (config.width - config.printableWidth) / 2;
+      const marginUnits = this.calculateMarginUnits(marginMm);
+      
+      // ESC l n - Define margem esquerda
+      printer.raw(Buffer.from([0x1B, 0x6C, marginUnits]));
+      
+      // ESC Q n - Define margem direita (calculada automaticamente pela impressora)
+      const rightMarginUnits = this.calculateMarginUnits(marginMm);
+      printer.raw(Buffer.from([0x1B, 0x51, rightMarginUnits]));
+      
+      this.logger.log(`Margens configuradas: ${marginMm}mm (${marginUnits} units) cada lado`);
+      this.logger.log(`Área útil: ${config.printableWidth}mm de ${config.width}mm total`);
+    } else {
+      // Configurar margem zero para área máxima de impressão
+      this.setZeroMargins(printer);
+      
+      this.logger.log('Margens zeradas - usando área máxima de impressão');
+    }
+  }
+
+  /**
+   * Define margens zero para máxima área de impressão
+   * @param printer - Instância do ThermalPrinter
+   */
+  private setZeroMargins(printer: ThermalPrinter): void {
+    // ESC l 0 - Margem esquerda = 0
+    printer.raw(Buffer.from([0x1B, 0x6C, 0x00]));
+    
+    // ESC Q 0 - Margem direita = 0
+    printer.raw(Buffer.from([0x1B, 0x51, 0x00]));
+    
+    this.logger.log('Comandos ESC/POS enviados: ESC l 0, ESC Q 0 (margens zero)');
+  }
+
+  /**
+   * Calcula unidades de margem para comandos ESC/POS
+   * @param marginMm - Margem em milímetros
+   * @param dpi - DPI da impressora (padrão: 203)
+   * @returns Unidades para comando ESC/POS (0-255)
+   */
+  private calculateMarginUnits(marginMm: number, dpi: number = 203): number {
+    // Converter mm para unidades da impressora
+    // Fórmula: (mm / 25.4) * dpi / 8 (8 pontos por unidade ESC/POS)
+    const units = Math.round((marginMm / 25.4) * dpi / 8);
+    
+    // Limitar entre 0-255 (limite do comando ESC/POS)
+    const clampedUnits = Math.max(0, Math.min(255, units));
+    
+    this.logger.debug(`Margem calculada: ${marginMm}mm = ${units} units (limitado: ${clampedUnits})`);
+    
+    return clampedUnits;
+  }
+
+  /**
+   * Configura área de impressão customizada via ESC W (comando avançado)
+   * @param printer - Instância do ThermalPrinter
+   * @param startXMm - Posição X inicial em mm
+   * @param startYMm - Posição Y inicial em mm
+   * @param widthMm - Largura da área em mm
+   * @param heightMm - Altura da área em mm
+   * @param dpi - DPI da impressora (padrão: 203)
+   */
+  private setPrintableAreaAdvanced(
+    printer: ThermalPrinter,
+    startXMm: number,
+    startYMm: number,
+    widthMm: number,
+    heightMm: number,
+    dpi: number = 203
+  ): void {
+    // Converter mm para unidades da impressora (1/180 inch)
+    const unitsPerMm = 180 / 25.4; // ~7.087 units per mm
+    
+    const xStart = Math.round(startXMm * unitsPerMm);
+    const yStart = Math.round(startYMm * unitsPerMm);
+    const width = Math.round(widthMm * unitsPerMm);
+    const height = Math.round(heightMm * unitsPerMm);
+    
+    // ESC W - Define área de impressão (comando avançado)
+    const command = Buffer.from([
+      0x1B, 0x57,                           // ESC W
+      xStart & 0xFF, (xStart >> 8) & 0xFF,  // xL, xH (posição X)
+      yStart & 0xFF, (yStart >> 8) & 0xFF,  // yL, yH (posição Y)
+      width & 0xFF, (width >> 8) & 0xFF,    // dxL, dxH (largura)
+      height & 0xFF, (height >> 8) & 0xFF   // dyL, dyH (altura)
+    ]);
+    
+    printer.raw(command);
+    
+    this.logger.log(`Área de impressão avançada configurada:`);
+    this.logger.log(`  Posição: (${startXMm}, ${startYMm})mm = (${xStart}, ${yStart}) units`);
+    this.logger.log(`  Tamanho: ${widthMm}x${heightMm}mm = ${width}x${height} units`);
+  }
+
   async processJobAsync(job: any): Promise<void> {
     const printerConfig = await this.getPrinterConfiguration(job.printerId);
     const printer = await this.createPrinterInstance(printerConfig);
@@ -113,6 +217,9 @@ export class PrinterService {
       lineCharacter: '-',
       // breakLine: 1 // Removido - causava erro de tipo
     });
+
+    // Configurar área de impressão via comandos ESC/POS
+    this.configurePrintableArea(printer, config);
 
     return printer;
   }

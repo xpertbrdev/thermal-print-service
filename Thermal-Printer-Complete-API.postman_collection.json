@@ -1,0 +1,246 @@
+{
+  "info": {
+    "name": "Thermal Printer Microservice - API Completa",
+    "description": "Collection completa do microservice de impressão térmica com todas as funcionalidades implementadas:\n\n🖨️ **Funcionalidades Principais:**\n- Sistema de sessões e filas\n- Múltiplas impressoras simultâneas\n- Comandos ESC/POS para área de impressão\n- Processamento avançado de imagens\n- QR codes configuráveis\n- Tabelas com larguras fixas\n- Monitoramento em tempo real\n\n📋 **Endpoints Organizados:**\n1. **Configuração** - Gerenciar impressoras\n2. **Impressão com Sessões** - Jobs com controle\n3. **Monitoramento** - Status e métricas\n4. **Testes ESC/POS** - Validar comandos\n5. **Utilitários** - Health check e debug\n\n🎯 **Casos de Uso:**\n- Restaurantes (cozinha, balcão, delivery)\n- Varejo (cupons, etiquetas)\n- Logística (códigos de barras)\n- Qualquer aplicação que precise de impressão térmica\n\n🔧 **Configuração:**\n1. Importe esta collection\n2. Configure o environment (baseUrl, printerId)\n3. Execute \"Setup - Configurar Impressoras\"\n4. Teste com \"Health Check\"\n5. Use os exemplos práticos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "thermal-printer-complete-api",
+    "version": {
+      "major": 2,
+      "minor": 1,
+      "patch": 0
+    }
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "printerId",
+      "value": "cozinha-1",
+      "type": "string"
+    },
+    {
+      "key": "sessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "timestamp",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Gerar timestamp para IDs únicos",
+          "const now = new Date();",
+          "const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);",
+          "pm.collectionVariables.set('timestamp', timestamp);",
+          "",
+          "// Gerar sessionId se não existir",
+          "if (!pm.collectionVariables.get('sessionId')) {",
+          "    const sessionId = 'sess_' + timestamp + '_' + Math.random().toString(36).substr(2, 5);",
+          "    pm.collectionVariables.set('sessionId', sessionId);",
+          "}",
+          "",
+          "console.log('🔧 Pre-request setup:');",
+          "console.log('  📍 Base URL:', pm.collectionVariables.get('baseUrl'));",
+          "console.log('  🖨️ Printer ID:', pm.collectionVariables.get('printerId'));",
+          "console.log('  🆔 Session ID:', pm.collectionVariables.get('sessionId'));",
+          "console.log('  ⏰ Timestamp:', pm.collectionVariables.get('timestamp'));"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log global para todas as requisições",
+          "console.log('📡 Response Status:', pm.response.code);",
+          "console.log('📊 Response Time:', pm.response.responseTime + 'ms');",
+          "",
+          "// Capturar sessionId das respostas",
+          "if (pm.response.json && pm.response.json().sessionId) {",
+          "    pm.collectionVariables.set('sessionId', pm.response.json().sessionId);",
+          "    console.log('🆔 Session ID capturado:', pm.response.json().sessionId);",
+          "}",
+          "",
+          "// Log de erro se status não for 2xx",
+          "if (pm.response.code >= 400) {",
+          "    console.error('❌ Erro na requisição:');",
+          "    console.error('  Status:', pm.response.code);",
+          "    console.error('  Response:', pm.response.text());",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "🔧 1. CONFIGURAÇÃO",
+      "item": [
+        {
+          "name": "Setup - Configurar Impressoras",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Configuração criada com sucesso', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().success).to.be.true;",
+                  "});",
+                  "",
+                  "console.log('✅ Impressoras configuradas com sucesso!');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printers\": [\n    {\n      \"id\": \"cozinha-1\",\n      \"name\": \"Impressora Cozinha 80mm\",\n      \"type\": \"epson\",\n      \"connectionType\": \"network\",\n      \"address\": \"192.168.1.100\",\n      \"charPerLine\": 48,\n      \"width\": 80,\n      \"printableWidth\": 80,\n      \"characterSet\": \"PC852_LATIN2\",\n      \"timeout\": 5000\n    },\n    {\n      \"id\": \"balcao-1\",\n      \"name\": \"Impressora Balcão 58mm\",\n      \"type\": \"star\",\n      \"connectionType\": \"network\",\n      \"address\": \"192.168.1.101\",\n      \"charPerLine\": 32,\n      \"width\": 58,\n      \"printableWidth\": 58,\n      \"characterSet\": \"PC850_MULTILINGUAL\",\n      \"timeout\": 5000\n    },\n    {\n      \"id\": \"delivery-1\",\n      \"name\": \"Impressora Delivery 112mm\",\n      \"type\": \"brother\",\n      \"connectionType\": \"usb\",\n      \"address\": \"/dev/usb/lp0\",\n      \"charPerLine\": 64,\n      \"width\": 112,\n      \"printableWidth\": 104,\n      \"characterSet\": \"PC437_USA\",\n      \"timeout\": 5000\n    }\n  ],\n  \"defaultSettings\": {\n    \"charPerLine\": 48,\n    \"width\": 80,\n    \"printableWidth\": 80,\n    \"characterSet\": \"PC852_LATIN2\",\n    \"timeout\": 5000,\n    \"margins\": {\n      \"top\": 0,\n      \"bottom\": 0,\n      \"left\": 0,\n      \"right\": 0\n    },\n    \"spacing\": {\n      \"lineHeight\": 1,\n      \"paragraphSpacing\": 1\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["config"]
+            },
+            "description": "Configura múltiplas impressoras com diferentes tamanhos e conexões.\n\n**Configurações incluídas:**\n- Cozinha: 80mm, Rede, Margem zero\n- Balcão: 58mm, Rede, Margem zero  \n- Delivery: 112mm, USB, Margem customizada\n\n**Comandos ESC/POS automáticos:**\n- ESC l 0 (margem esquerda zero)\n- ESC Q 0 (margem direita zero)\n- Ou margens customizadas conforme printableWidth"
+          }
+        },
+        {
+          "name": "Consultar Configurações",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/config",
+              "host": ["{{baseUrl}}"],
+              "path": ["config"]
+            },
+            "description": "Retorna todas as configurações de impressoras e settings padrão."
+          }
+        },
+        {
+          "name": "Listar Impressoras",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/config/printers",
+              "host": ["{{baseUrl}}"],
+              "path": ["config", "printers"]
+            },
+            "description": "Lista apenas as impressoras configuradas."
+          }
+        },
+        {
+          "name": "Detalhes de Impressora",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/config/printers/{{printerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["config", "printers", "{{printerId}}"]
+            },
+            "description": "Retorna configuração detalhada de uma impressora específica."
+          }
+        }
+      ],
+      "description": "Endpoints para configurar e gerenciar impressoras.\n\n**Funcionalidades:**\n- Configuração de múltiplas impressoras\n- Definição de área de impressão (width vs printableWidth)\n- Comandos ESC/POS automáticos para margem\n- Suporte a diferentes tipos e conexões"
+    },
+    {
+      "name": "🖨️ 2. IMPRESSÃO COM SESSÕES",
+      "item": [
+        {
+          "name": "Impressão Completa - Restaurante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Impressão iniciada com sucesso', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json().success).to.be.true;",
+                  "});",
+                  "",
+                  "// Capturar sessionId",
+                  "if (pm.response.json().sessionId) {",
+                  "    pm.collectionVariables.set('sessionId', pm.response.json().sessionId);",
+                  "    console.log('🆔 Session ID:', pm.response.json().sessionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"priority\": \"normal\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"PEDIDO #1234\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\",\n        \"width\": 2,\n        \"height\": 2\n      }\n    },\n    {\n      \"type\": \"line\",\n      \"character\": \"=\",\n      \"length\": 48\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Mesa: 15    Garçom: João\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Data: {{timestamp}}\",\n      \"style\": { \"align\": \"left\" }\n    },\n    { \"type\": \"new-line\" },\n    {\n      \"type\": \"table\",\n      \"table\": {\n        \"headers\": [\"Item\", \"Qtd\", \"Valor\"],\n        \"rows\": [\n          { \"cells\": [\"Pizza Margherita Grande\", \"1\", \"R$ 35,00\"] },\n          { \"cells\": [\"Refrigerante 350ml\", \"2\", \"R$ 12,00\"] },\n          { \"cells\": [\"Taxa de Entrega\", \"1\", \"R$ 5,00\"] }\n        ],\n        \"columns\": [\n          { \"width\": 24, \"align\": \"left\" },\n          { \"width\": 4, \"align\": \"center\" },\n          { \"width\": 12, \"align\": \"right\" }\n        ],\n        \"separator\": \" | \",\n        \"borderChar\": \"-\"\n      }\n    },\n    {\n      \"type\": \"line\",\n      \"character\": \"-\",\n      \"length\": 48\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"TOTAL: R$ 52,00\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"right\",\n        \"width\": 2\n      }\n    },\n    { \"type\": \"new-line\" },\n    {\n      \"type\": \"text\",\n      \"value\": \"Observações:\",\n      \"style\": { \"bold\": true }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"- Pizza sem cebola\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"- Refrigerante gelado\",\n      \"style\": { \"align\": \"left\" }\n    },\n    { \"type\": \"new-line\" },\n    {\n      \"type\": \"qr-code\",\n      \"value\": \"https://restaurante.com/pedido/1234\",\n      \"options\": {\n        \"size\": 6,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Acompanhe seu pedido\",\n      \"style\": { \"align\": \"center\" }\n    },\n    { \"type\": \"new-line\" },\n    { \"type\": \"cut\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/print/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["print", "session"]
+            },
+            "description": "Exemplo completo de pedido de restaurante com:\n\n**Elementos incluídos:**\n- Cabeçalho formatado\n- Tabela com larguras fixas\n- QR code para acompanhamento\n- Observações do cliente\n- Corte automático\n\n**Comandos ESC/POS automáticos:**\n- Margem zero para área máxima\n- Formatação de texto (negrito, alinhamento)\n- Redimensionamento de QR code"
+          }
+        },
+        {
+          "name": "Impressão com Imagem Base64",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"TESTE IMAGEM BASE64\",\n      \"style\": { \"bold\": true, \"align\": \"center\" }\n    },\n    { \"type\": \"new-line\" },\n    {\n      \"type\": \"image\",\n      \"base64\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\",\n      \"description\": \"Imagem será otimizada automaticamente para largura da impressora\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Imagem processada com:\",\n      \"style\": { \"align\": \"center\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"- Redimensionamento automático\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"- Escala de cinza otimizada\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"- Contraste normalizado\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"- Área de impressão máxima\",\n      \"style\": { \"align\": \"left\" }\n    },\n    { \"type\": \"cut\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/print/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["print", "session"]
+            },
+            "description": "Teste de impressão com imagem em base64.\n\n**Processamento automático:**\n- Redimensionamento para largura da impressora\n- Conversão para escala de cinza\n- Normalização de contraste\n- Ajuste de brilho (+10%)\n- Sharpening leve\n- Threshold para P&B"
+          }
+        },
+        {
+          "name": "Etiqueta Delivery com Código de Barras",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"delivery-1\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"ETIQUETA DE ENTREGA\",\n      \"style\": { \"bold\": true, \"align\": \"center\", \"width\": 2 }\n    },\n    {\n      \"type\": \"line\",\n      \"character\": \"=\",\n      \"length\": 64\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Pedido: #DEL-5678\",\n      \"style\": { \"bold\": true }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Data: {{timestamp}}\",\n      \"style\": { \"align\": \"left\" }\n    },\n    { \"type\": \"new-line\" },\n    {\n      \"type\": \"text\",\n      \"value\": \"DESTINATÁRIO:\",\n      \"style\": { \"bold\": true }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Maria Silva\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Rua das Flores, 123 - Apto 45\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Jardim Primavera - São Paulo/SP\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"CEP: 01234-567\",\n      \"style\": { \"align\": \"left\" }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Tel: (11) 99999-8888\",\n      \"style\": { \"align\": \"left\" }\n    },\n    { \"type\": \"new-line\" },\n    {\n      \"type\": \"barcode\",\n      \"value\": \"DEL5678\",\n      \"options\": {\n        \"type\": \"CODE128\",\n        \"width\": 2,\n        \"height\": 100,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"DEL-5678\",\n      \"style\": { \"align\": \"center\", \"bold\": true }\n    },\n    { \"type\": \"new-line\" },\n    {\n      \"type\": \"text\",\n      \"value\": \"Valor: R$ 45,90 (Pago)\",\n      \"style\": { \"bold\": true, \"align\": \"center\" }\n    },\n    { \"type\": \"cut\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/print/session",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"session\"]\n            },\n            \"description\": \"Etiqueta completa para delivery com código de barras.\\n\\n**Impressora 112mm:**\\n- Área útil: 104mm (margem 4mm cada lado)\\n- Código de barras CODE128\\n- Endereço completo\\n- Informações de pagamento\"\n          }\n        },\n        {\n          \"name\": \"Cupom Fiscal com QR Code\",\n          \"request\": {\n            \"method\": \"POST\",\n            \"header\": [\n              {\n                \"key\": \"Content-Type\",\n                \"value\": \"application/json\"\n              }\n            ],\n            \"body\": {\n              \"mode\": \"raw\",\n              \"raw\": \"{\\n  \\\"printerId\\\": \\\"balcao-1\\\",\\n  \\\"content\\\": [\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"LOJA EXEMPLO LTDA\\\",\\n      \\\"style\\\": { \\\"bold\\\": true, \\\"align\\\": \\\"center\\\" }\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"CNPJ: 12.345.678/0001-90\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"center\\\" }\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"Rua Comercial, 456 - Centro\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"center\\\" }\\n    },\\n    {\\n      \\\"type\\\": \\\"line\\\",\\n      \\\"character\\\": \\\"-\\\",\\n      \\\"length\\\": 32\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"CUPOM FISCAL ELETRÔNICO\\\",\\n      \\\"style\\\": { \\\"bold\\\": true, \\\"align\\\": \\\"center\\\" }\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"CFe: 35240612345678000190590010000000011234567890\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"center\\\" }\\n    },\\n    { \\\"type\\\": \\\"new-line\\\" },\\n    {\\n      \\\"type\\\": \\\"table\\\",\\n      \\\"table\\\": {\\n        \\\"headers\\\": [\\\"Item\\\", \\\"Qtd\\\", \\\"Valor\\\"],\\n        \\\"rows\\\": [\\n          { \\\"cells\\\": [\\\"Produto A\\\", \\\"2\\\", \\\"R$ 10,00\\\"] },\\n          { \\\"cells\\\": [\\\"Produto B\\\", \\\"1\\\", \\\"R$ 15,50\\\"] },\\n          { \\\"cells\\\": [\\\"Produto C\\\", \\\"3\\\", \\\"R$ 7,25\\\"] }\\n        ],\\n        \\\"columns\\\": [\\n          { \\\"width\\\": 16, \\\"align\\\": \\\"left\\\" },\\n          { \\\"width\\\": 4, \\\"align\\\": \\\"center\\\" },\\n          { \\\"width\\\": 8, \\\"align\\\": \\\"right\\\" }\\n        ],\\n        \\\"separator\\\": \\\" \\\",\\n        \\\"borderChar\\\": \\\"-\\\"\\n      }\\n    },\\n    {\\n      \\\"type\\\": \\\"line\\\",\\n      \\\"character\\\": \\\"-\\\",\\n      \\\"length\\\": 32\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"TOTAL: R$ 32,75\\\",\\n      \\\"style\\\": { \\\"bold\\\": true, \\\"align\\\": \\\"right\\\" }\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"Forma Pagto: Dinheiro\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"left\\\" }\\n    },\\n    { \\\"type\\\": \\\"new-line\\\" },\\n    {\\n      \\\"type\\\": \\\"qr-code\\\",\\n      \\\"value\\\": \\\"https://nfce.fazenda.gov.br/qrcode?chNFe=35240612345678000190590010000000011234567890\\\",\\n      \\\"options\\\": {\\n        \\\"size\\\": 8,\\n        \\\"align\\\": \\\"center\\\"\\n      }\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"Consulte pela Chave de Acesso em\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"center\\\" }\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"nfce.fazenda.gov.br\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"center\\\" }\\n    },\\n    { \\\"type\\\": \\\"new-line\\\" },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"Obrigado pela preferência!\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"center\\\", \\\"bold\\\": true }\\n    },\\n    { \\\"type\\\": \\\"cut\\\" }\\n  ]\\n}\"\n            },\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/session\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"session\"]\n            },\n            \"description\": \"Cupom fiscal eletrônico completo.\\n\\n**Impressora 58mm:**\\n- Área útil: 58mm (margem zero)\\n- QR code para consulta NFCe\\n- Tabela compacta\\n- Informações fiscais\"\n          }\n        }\n      ],\n      \"description\": \"Endpoints para impressão com controle de sessão.\\n\\n**Funcionalidades:**\\n- Sistema de filas por impressora\\n- IDs de sessão únicos\\n- Processamento assíncrono\\n- Comandos ESC/POS automáticos\\n- Otimização de imagens\"\n    },\n    {\n      \"name\": \"📊 3. MONITORAMENTO E STATUS\",\n      \"item\": [\n        {\n          \"name\": \"Status da Sessão\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/status/{{sessionId}}\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"status\", \"{{sessionId}}\"]\n            },\n            \"description\": \"Consulta o status detalhado de uma sessão de impressão.\\n\\n**Estados possíveis:**\\n- queued: Na fila\\n- printing: Imprimindo\\n- completed: Concluído\\n- failed: Falhou\\n- cancelled: Cancelado\"\n          }\n        },\n        {\n          \"name\": \"Cancelar Sessão\",\n          \"request\": {\n            \"method\": \"DELETE\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/cancel/{{sessionId}}\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"cancel\", \"{{sessionId}}\"]\n            },\n            \"description\": \"Cancela uma sessão de impressão (se ainda estiver na fila).\"\n          }\n        },\n        {\n          \"name\": \"Fila da Impressora\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/queue/{{printerId}}\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"queue\", \"{{printerId}}\"]\n            },\n            \"description\": \"Mostra a fila de impressão de uma impressora específica.\"\n          }\n        },\n        {\n          \"name\": \"Dashboard Completo\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/monitoring/dashboard\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"monitoring\", \"dashboard\"]\n            },\n            \"description\": \"Dashboard completo com métricas de todas as impressoras.\\n\\n**Informações incluídas:**\\n- Status de cada impressora\\n- Jobs em fila\\n- Estatísticas de performance\\n- Alertas ativos\"\n          }\n        },\n        {\n          \"name\": \"Métricas Detalhadas\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/monitoring/metrics\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"monitoring\", \"metrics\"]\n            },\n            \"description\": \"Métricas detalhadas de performance e uso.\"\n          }\n        },\n        {\n          \"name\": \"Alertas do Sistema\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/monitoring/alerts\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"monitoring\", \"alerts\"]\n            },\n            \"description\": \"Lista alertas ativos do sistema (impressoras offline, alta taxa de erro, etc.).\"\n          }\n        },\n        {\n          \"name\": \"Limpar Fila\",\n          \"request\": {\n            \"method\": \"DELETE\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/queue/{{printerId}}/clear\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"queue\", \"{{printerId}}\", \"clear\"]\n            },\n            \"description\": \"Remove todos os jobs da fila de uma impressora (apenas jobs pendentes).\"\n          }\n        }\n      ],\n      \"description\": \"Endpoints para monitoramento e controle do sistema.\\n\\n**Funcionalidades:**\\n- Status em tempo real\\n- Métricas de performance\\n- Alertas automáticos\\n- Controle de filas\\n- Dashboard completo\"\n    },\n    {\n      \"name\": \"🧪 4. TESTES ESC/POS\",\n      \"item\": [\n        {\n          \"name\": \"Testar Margem Zero - 80mm\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/escpos-test/margin/80?printableWidth=80\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"escpos-test\", \"margin\", \"80\"],\n              \"query\": [\n                {\n                  \"key\": \"printableWidth\",\n                  \"value\": \"80\"\n                }\n              ]\n            },\n            \"description\": \"Testa comandos ESC/POS para margem zero em impressora 80mm.\\n\\n**Comandos esperados:**\\n- ESC l 0 (1B 6C 00)\\n- ESC Q 0 (1B 51 00)\\n\\n**Resultado:** Impressão ocupando toda largura (80mm)\"\n          }\n        },\n        {\n          \"name\": \"Testar Área Customizada - 80mm → 72mm\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/escpos-test/margin/80?printableWidth=72\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"escpos-test\", \"margin\", \"80\"],\n              \"query\": [\n                {\n                  \"key\": \"printableWidth\",\n                  \"value\": \"72\"\n                }\n              ]\n            },\n            \"description\": \"Testa comandos ESC/POS para área customizada.\\n\\n**Comandos esperados:**\\n- ESC l 10 (1B 6C 0A) - Margem 4mm\\n- ESC Q 10 (1B 51 0A) - Margem 4mm\\n\\n**Resultado:** Impressão centralizada com 72mm úteis\"\n          }\n        },\n        {\n          \"name\": \"Comparar Buffers (Com vs Sem ESC/POS)\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/escpos-test/compare-buffers\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"escpos-test\", \"compare-buffers\"]\n            },\n            \"description\": \"Compara buffers de comandos com e sem ESC/POS.\\n\\n**Mostra:**\\n- Buffer sem comandos ESC/POS\\n- Buffer com comandos ESC/POS\\n- Diferenças (comandos adicionados)\"\n          }\n        },\n        {\n          \"name\": \"Validar Integração ESC/POS\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/escpos-test/validate/{{printerId}}\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"escpos-test\", \"validate\", \"{{printerId}}\"]\n            },\n            \"description\": \"Valida se comandos ESC/POS estão sendo integrados corretamente.\\n\\n**Verifica:**\\n- Presença dos comandos no buffer\\n- Ordem correta dos comandos\\n- Integração com PrinterService\"\n          }\n        },\n        {\n          \"name\": \"Informações ESC/POS\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/escpos-test/info\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"escpos-test\", \"info\"]\n            },\n            \"description\": \"Documentação completa dos comandos ESC/POS implementados.\"\n          }\n        },\n        {\n          \"name\": \"Cenários de Teste\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/escpos-test/scenarios\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"escpos-test\", \"scenarios\"]\n            },\n            \"description\": \"Lista todos os cenários de teste disponíveis para comandos ESC/POS.\"\n          }\n        },\n        {\n          \"name\": \"Teste Comando ESC W (Avançado)\",\n          \"request\": {\n            \"method\": \"POST\",\n            \"header\": [\n              {\n                \"key\": \"Content-Type\",\n                \"value\": \"application/json\"\n              }\n            ],\n            \"body\": {\n              \"mode\": \"raw\",\n              \"raw\": \"{\\n  \\\"startXMm\\\": 4,\\n  \\\"startYMm\\\": 0,\\n  \\\"widthMm\\\": 72,\\n  \\\"heightMm\\\": 200\\n}\"\n            },\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/escpos-test/advanced-area\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"escpos-test\", \"advanced-area\"]\n            },\n            \"description\": \"Testa comando ESC W para área de impressão avançada.\\n\\n**Parâmetros:**\\n- Posição inicial (X, Y)\\n- Tamanho da área (largura, altura)\\n- Conversão automática mm → units\"\n          }\n        }\n      ],\n      \"description\": \"Endpoints para testar e validar comandos ESC/POS.\\n\\n**Funcionalidades:**\\n- Teste de comandos de margem\\n- Validação de integração\\n- Comparação de buffers\\n- Documentação técnica\\n- Cenários de teste\"\n    },\n    {\n      \"name\": \"🔧 5. UTILITÁRIOS\",\n      \"item\": [\n        {\n          \"name\": \"Health Check\",\n          \"event\": [\n            {\n              \"listen\": \"test\",\n              \"script\": {\n                \"exec\": [\n                  \"pm.test('Serviço está funcionando', function () {\",\n                  \"    pm.response.to.have.status(200);\",\n                  \"    pm.expect(pm.response.json().status).to.eql('ok');\",\n                  \"});\",\n                  \"\",\n                  \"console.log('✅ Microservice está online e funcionando!');\"\n                ]\n              }\n            }\n          ],\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/health\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"health\"]\n            },\n            \"description\": \"Verifica se o microservice está funcionando corretamente.\"\n          }\n        },\n        {\n          \"name\": \"Teste de Conexão\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/test-connection?printerId={{printerId}}\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"test-connection\"],\n              \"query\": [\n                {\n                  \"key\": \"printerId\",\n                  \"value\": \"{{printerId}}\"\n                }\n              ]\n            },\n            \"description\": \"Testa a conexão com uma impressora específica.\"\n          }\n        },\n        {\n          \"name\": \"Impressão Simples (Sem Sessão)\",\n          \"request\": {\n            \"method\": \"POST\",\n            \"header\": [\n              {\n                \"key\": \"Content-Type\",\n                \"value\": \"application/json\"\n              }\n            ],\n            \"body\": {\n              \"mode\": \"raw\",\n              \"raw\": \"{\\n  \\\"printerId\\\": \\\"{{printerId}}\\\",\\n  \\\"content\\\": [\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"TESTE SIMPLES\\\",\\n      \\\"style\\\": { \\\"bold\\\": true, \\\"align\\\": \\\"center\\\" }\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"Impressão sem controle de sessão\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"center\\\" }\\n    },\\n    {\\n      \\\"type\\\": \\\"text\\\",\\n      \\\"value\\\": \\\"Comandos ESC/POS aplicados automaticamente\\\",\\n      \\\"style\\\": { \\\"align\\\": \\\"center\\\" }\\n    },\\n    { \\\"type\\\": \\\"cut\\\" }\\n  ]\\n}\"\n            },\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\"]\n            },\n            \"description\": \"Impressão direta sem controle de sessão (para testes rápidos).\"\n          }\n        },\n        {\n          \"name\": \"Listar Sessões Ativas\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/sessions\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"sessions\"]\n            },\n            \"description\": \"Lista todas as sessões ativas no sistema.\"\n          }\n        },\n        {\n          \"name\": \"Estatísticas das Filas\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"url\": {\n              \"raw\": \"{{baseUrl}}/print/queue/stats\",\n              \"host\": [\"{{baseUrl}}\"],\n              \"path\": [\"print\", \"queue\", \"stats\"]\n            },\n            \"description\": \"Estatísticas gerais de todas as filas de impressão.\"\n          }\n        }\n      ],\n      \"description\": \"Endpoints utilitários para testes e debug.\\n\\n**Funcionalidades:**\\n- Health check do serviço\\n- Teste de conexão\\n- Impressão simples\\n- Estatísticas gerais\\n- Debug e troubleshooting\"\n    }\n  ],\n  \"auth\": {\n    \"type\": \"noauth\"\n  }\n}"
