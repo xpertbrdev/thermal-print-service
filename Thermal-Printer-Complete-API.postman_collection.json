@@ -303,6 +303,467 @@
           }
         }
       ]
+    },
+    {
+      "name": "6. PROCESSAMENTO PDF",
+      "item": [
+        {
+          "name": "Processar PDF Base64",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success field', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "});",
+                  "",
+                  "if (pm.response.json().success) {",
+                  "    console.log('PDF processado com sucesso!');",
+                  "    const data = pm.response.json().data;",
+                  "    console.log(`Páginas processadas: ${data.processedPages}/${data.totalPages}`);",
+                  "    console.log(`Tempo de processamento: ${data.processingTime}ms`);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"pdf\": \"data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDw8Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKNCAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVApxCjAgMCAwIHJnCjAgMCAwIFJHCjU2LjY5MyA3ODUuMTk3IG0KNTYuNjkzIDc0MS4yNzMgbApTCkVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyNDUgMDAwMDAgbgp0cmFpbGVyCjw8Ci9TaXplIDUKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjMzOQolJUVPRg==\",\n  \"quality\": 100,\n  \"format\": \"png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pdf/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["pdf", "process"]
+            }
+          }
+        },
+        {
+          "name": "Processar PDF com Páginas Específicas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.success) {",
+                  "    console.log('PDF com páginas específicas processado!');",
+                  "    console.log(`Páginas solicitadas: [1, 2]`);",
+                  "    console.log(`Páginas processadas: ${jsonData.data.processedPages}`);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"pdf\": \"/path/to/documento-multipaginas.pdf\",\n  \"pages\": [1, 2],\n  \"quality\": 95,\n  \"density\": 225\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pdf/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["pdf", "process"]
+            }
+          }
+        },
+        {
+          "name": "Processar PDF de URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.success) {",
+                  "    console.log('PDF de URL processado com sucesso!');",
+                  "    console.log(`URL: https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf`);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"pdf\": \"https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf\",\n  \"quality\": 100,\n  \"format\": \"jpeg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pdf/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["pdf", "process"]
+            }
+          }
+        },
+        {
+          "name": "Obter Informações do PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.success) {",
+                  "    console.log('Informações do PDF obtidas:');",
+                  "    console.log(`Páginas: ${jsonData.data.pages}`);",
+                  "    console.log(`Tamanho: ${jsonData.data.size} bytes`);",
+                  "    console.log(`Formato: ${jsonData.data.format}`);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pdf\": \"data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDw8Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKNCAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVApxCjAgMCAwIHJnCjAgMCAwIFJHCjU2LjY5MyA3ODUuMTk3IG0KNTYuNjkzIDc0MS4yNzMgbApTCkVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyNDUgMDAwMDAgbgp0cmFpbGVyCjw8Ci9TaXplIDUKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjMzOQolJUVPRg==\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pdf/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["pdf", "info"]
+            }
+          }
+        },
+        {
+          "name": "Teste PDF com Exemplo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.success) {",
+                  "    console.log('Teste de PDF executado com sucesso!');",
+                  "    console.log(`Resultado: ${jsonData.data.result.processedPages} páginas processadas`);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/pdf/test?printerId={{printerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["pdf", "test"],
+              "query": [
+                {
+                  "key": "printerId",
+                  "value": "{{printerId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Estatísticas do Serviço PDF",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/pdf/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["pdf", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Limpeza de Arquivos Temporários",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.success) {",
+                  "    console.log('Limpeza de arquivos temporários executada!');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/pdf/cleanup?maxAgeHours=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["pdf", "cleanup"],
+              "query": [
+                {
+                  "key": "maxAgeHours",
+                  "value": "12"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. IMPRESSÃO COM PDF",
+      "item": [
+        {
+          "name": "Cupom Fiscal com PDF",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const sessionId = 'sess_cupom_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);",
+                  "pm.collectionVariables.set('sessionId', sessionId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.sessionId) {",
+                  "    pm.collectionVariables.set('sessionId', jsonData.sessionId);",
+                  "    console.log('Cupom fiscal com PDF enviado! SessionId:', jsonData.sessionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"CUPOM FISCAL ELETRÔNICO\",\n      \"style\": {\"bold\": true, \"align\": \"center\"}\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"pdf\",\n      \"pdf\": \"data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDw8Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKNCAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVApxCjAgMCAwIHJnCjAgMCAwIFJHCjU2LjY5MyA3ODUuMTk3IG0KNTYuNjkzIDc0MS4yNzMgbApTCkVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyNDUgMDAwMDAgbgp0cmFpbGVyCjw8Ci9TaXplIDUKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjMzOQolJUVPRg==\",\n      \"quality\": 100\n    },\n    {\n      \"type\": \"new-line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Via do Cliente\",\n      \"style\": {\"align\": \"center\"}\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/print/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["print", "session"]
+            }
+          }
+        },
+        {
+          "name": "Relatório Multi-página com PDF",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const sessionId = 'sess_relatorio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);",
+                  "pm.collectionVariables.set('sessionId', sessionId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.sessionId) {",
+                  "    console.log('Relatório com PDF multi-página enviado!');",
+                  "    console.log('SessionId:', jsonData.sessionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"RELATÓRIO MENSAL DE VENDAS\",\n      \"style\": {\"bold\": true, \"align\": \"center\", \"width\": 2, \"height\": 2}\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Período: Janeiro 2024\",\n      \"style\": {\"align\": \"center\"}\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"pdf\",\n      \"pdf\": \"/reports/vendas-janeiro-2024.pdf\",\n      \"pages\": [1, 2, 3, 4],\n      \"quality\": 95\n    },\n    {\n      \"type\": \"new-line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"Gerado em: \" + new Date().toLocaleString(),\n      \"style\": {\"align\": \"right\"}\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/print/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["print", "session"]
+            }
+          }
+        },
+        {
+          "name": "Documento Jurídico com PDF",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const sessionId = 'sess_juridico_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);",
+                  "pm.collectionVariables.set('sessionId', sessionId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.sessionId) {",
+                  "    console.log('Documento jurídico com PDF enviado!');",
+                  "    console.log('SessionId:', jsonData.sessionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"ESCRITÓRIO ADVOCACIA & ASSOCIADOS\",\n      \"style\": {\"bold\": true, \"align\": \"center\"}\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"OAB/SP 123.456\",\n      \"style\": {\"align\": \"center\"}\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"CONTRATO DE PRESTAÇÃO DE SERVIÇOS\",\n      \"style\": {\"bold\": true, \"align\": \"center\", \"underline\": true}\n    },\n    {\n      \"type\": \"new-line\"\n    },\n    {\n      \"type\": \"pdf\",\n      \"pdf\": \"https://servidor.juridico.com/contratos/contrato-123.pdf\",\n      \"quality\": 100,\n      \"format\": \"png\"\n    },\n    {\n      \"type\": \"new-line\"\n    },\n    {\n      \"type\": \"table\",\n      \"table\": {\n        \"headers\": [\"Campo\", \"Valor\"],\n        \"rows\": [\n          {\"cells\": [\"Protocolo\", \"2024-001234\"]},\n          {\"cells\": [\"Data\", \"15/01/2024\"]},\n          {\"cells\": [\"Advogado\", \"Dr. João Silva\"]}\n        ]\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/print/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["print", "session"]
+            }
+          }
+        },
+        {
+          "name": "Comprovante com PDF Anexo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const sessionId = 'sess_comprovante_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);",
+                  "pm.collectionVariables.set('sessionId', sessionId);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.sessionId) {",
+                  "    console.log('Comprovante com PDF anexo enviado!');",
+                  "    console.log('SessionId:', jsonData.sessionId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"printerId\": \"{{printerId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"COMPROVANTE DE PAGAMENTO\",\n      \"style\": {\"bold\": true, \"align\": \"center\"}\n    },\n    {\n      \"type\": \"line\"\n    },\n    {\n      \"type\": \"table\",\n      \"table\": {\n        \"headers\": [\"Descrição\", \"Valor\"],\n        \"rows\": [\n          {\"cells\": [\"Valor Principal\", \"R$ 1.500,00\"]},\n          {\"cells\": [\"Juros\", \"R$ 15,00\"]},\n          {\"cells\": [\"Total Pago\", \"R$ 1.515,00\"]}\n        ]\n      }\n    },\n    {\n      \"type\": \"new-line\"\n    },\n    {\n      \"type\": \"text\",\n      \"value\": \"DOCUMENTO ANEXO:\",\n      \"style\": {\"bold\": true}\n    },\n    {\n      \"type\": \"pdf\",\n      \"pdf\": \"/financeiro/comprovantes/pix-123456.pdf\",\n      \"pages\": [1],\n      \"quality\": 100\n    },\n    {\n      \"type\": \"qr-code\",\n      \"value\": \"PIX-COMPROVANTE-123456\",\n      \"options\": {\n        \"size\": 6,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"cut\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/print/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["print", "session"]
+            }
+          }
+        }
+      ]
     }
   ]
 }
