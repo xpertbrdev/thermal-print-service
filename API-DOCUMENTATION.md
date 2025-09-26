@@ -1,1 +1,759 @@
-# 🖨️ Thermal Printer Microservice - Documentação Completa da API\n\n## 📋 Visão Geral\n\nMicroservice profissional para impressão térmica com suporte completo a comandos ESC/POS, sistema de sessões, filas de impressão e processamento avançado de imagens.\n\n### ✨ Principais Funcionalidades\n\n- **Sistema de Sessões**: Controle total de jobs de impressão com IDs únicos\n- **Múltiplas Impressoras**: Suporte simultâneo a diferentes impressoras\n- **Comandos ESC/POS**: Eliminação automática de margens físicas\n- **Processamento de Imagens**: Otimização automática para impressão térmica\n- **Filas Inteligentes**: Processamento sequencial por impressora\n- **Monitoramento**: Dashboard e métricas em tempo real\n- **QR Codes Configuráveis**: Tamanho e alinhamento personalizáveis\n- **Tabelas com Larguras Fixas**: Alinhamento perfeito de colunas\n\n---\n\n## 🚀 Início Rápido\n\n### 1. Instalação e Execução\n\n```bash\n# Clonar repositório\ngit clone https://github.com/xpertbrdev/thermal-print-service.git\ncd thermal-print-service\n\n# Instalar dependências\nnpm install\n\n# Executar em desenvolvimento\nnpm run start:dev\n\n# Executar em produção\nnpm run build\nnpm run start:prod\n```\n\n### 2. Configuração Inicial\n\n```bash\n# Configurar impressoras\ncurl -X POST http://localhost:3000/config \\\n  -H \"Content-Type: application/json\" \\\n  -d @examples/printer-config-updated.json\n\n# Verificar saúde do serviço\ncurl http://localhost:3000/print/health\n```\n\n### 3. Primeira Impressão\n\n```bash\n# Impressão simples\ncurl -X POST http://localhost:3000/print/session \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"printerId\": \"cozinha-1\",\n    \"content\": [\n      {\"type\": \"text\", \"value\": \"Olá Mundo!\", \"style\": {\"bold\": true}},\n      {\"type\": \"cut\"}\n    ]\n  }'\n```\n\n---\n\n## 📚 Endpoints da API\n\n### 🔧 1. CONFIGURAÇÃO\n\n#### POST /config\n**Configura múltiplas impressoras**\n\n```json\n{\n  \"printers\": [\n    {\n      \"id\": \"cozinha-1\",\n      \"name\": \"Impressora Cozinha 80mm\",\n      \"type\": \"epson\",\n      \"connectionType\": \"network\",\n      \"address\": \"192.168.1.100\",\n      \"charPerLine\": 48,\n      \"width\": 80,\n      \"printableWidth\": 80,\n      \"characterSet\": \"PC852_LATIN2\",\n      \"timeout\": 5000\n    }\n  ],\n  \"defaultSettings\": {\n    \"charPerLine\": 48,\n    \"width\": 80,\n    \"printableWidth\": 80,\n    \"characterSet\": \"PC852_LATIN2\",\n    \"timeout\": 5000\n  }\n}\n```\n\n**Comandos ESC/POS Automáticos:**\n- `ESC l 0` (1B 6C 00) - Margem esquerda zero\n- `ESC Q 0` (1B 51 00) - Margem direita zero\n- Ou margens customizadas baseadas em `printableWidth`\n\n#### GET /config\n**Consulta todas as configurações**\n\n#### GET /config/printers\n**Lista impressoras configuradas**\n\n#### GET /config/printers/:id\n**Detalhes de impressora específica**\n\n---\n\n### 🖨️ 2. IMPRESSÃO COM SESSÕES\n\n#### POST /print/session\n**Impressão com controle de sessão**\n\n```json\n{\n  \"printerId\": \"cozinha-1\",\n  \"sessionId\": \"sess_20241226_143022_abc12\",\n  \"priority\": \"normal\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"value\": \"PEDIDO #1234\",\n      \"style\": {\n        \"bold\": true,\n        \"align\": \"center\",\n        \"width\": 2,\n        \"height\": 2\n      }\n    },\n    {\n      \"type\": \"table\",\n      \"table\": {\n        \"headers\": [\"Item\", \"Qtd\", \"Valor\"],\n        \"rows\": [\n          {\"cells\": [\"Pizza Margherita\", \"1\", \"R$ 35,00\"]}\n        ],\n        \"columns\": [\n          {\"width\": 24, \"align\": \"left\"},\n          {\"width\": 4, \"align\": \"center\"},\n          {\"width\": 12, \"align\": \"right\"}\n        ],\n        \"separator\": \" | \",\n        \"borderChar\": \"-\"\n      }\n    },\n    {\n      \"type\": \"image\",\n      \"base64\": \"data:image/png;base64,iVBORw0KGgo...\"\n    },\n    {\n      \"type\": \"qr-code\",\n      \"value\": \"https://exemplo.com/pedido/1234\",\n      \"options\": {\n        \"size\": 6,\n        \"align\": \"center\"\n      }\n    },\n    {\n      \"type\": \"barcode\",\n      \"value\": \"1234567890\",\n      \"options\": {\n        \"type\": \"CODE128\",\n        \"width\": 2,\n        \"height\": 100,\n        \"align\": \"center\"\n      }\n    },\n    {\"type\": \"cut\"}\n  ]\n}\n```\n\n**Tipos de Conteúdo Suportados:**\n\n| Tipo | Descrição | Opções |\n|------|-----------|--------|\n| `text` | Texto formatado | `bold`, `align`, `width`, `height` |\n| `image` | Imagem (URL/base64/local) | Otimização automática |\n| `table` | Tabela com larguras fixas | `columns`, `separator`, `borderChar` |\n| `qr-code` | QR Code configurável | `size`, `align` |\n| `barcode` | Código de barras | `type`, `width`, `height`, `align` |\n| `line` | Linha de caracteres | `character`, `length` |\n| `new-line` | Quebra de linha | - |\n| `cut` | Corte do papel | - |\n| `beep` | Som da impressora | - |\n| `cash-drawer` | Abertura da gaveta | - |\n\n#### POST /print\n**Impressão simples (sem sessão)**\n\n#### GET /print/status/:sessionId\n**Status da sessão**\n\n**Estados possíveis:**\n- `queued` - Na fila aguardando\n- `printing` - Sendo processado\n- `completed` - Concluído com sucesso\n- `failed` - Falhou na execução\n- `cancelled` - Cancelado pelo usuário\n\n#### DELETE /print/cancel/:sessionId\n**Cancelar sessão**\n\n---\n\n### 📊 3. MONITORAMENTO E FILAS\n\n#### GET /print/queue/:printerId\n**Fila de impressão da impressora**\n\n#### DELETE /print/queue/:printerId/clear\n**Limpar fila da impressora**\n\n#### GET /print/queue/stats\n**Estatísticas das filas**\n\n#### GET /print/sessions\n**Listar sessões ativas**\n\n#### GET /monitoring/dashboard\n**Dashboard completo**\n\n```json\n{\n  \"timestamp\": \"2024-12-26T14:30:22.123Z\",\n  \"printers\": {\n    \"cozinha-1\": {\n      \"status\": \"online\",\n      \"queueSize\": 3,\n      \"processing\": \"sess_20241226_143022_abc12\",\n      \"lastJob\": \"2024-12-26T14:29:15.456Z\",\n      \"totalJobs\": 127,\n      \"successRate\": 98.4\n    }\n  },\n  \"system\": {\n    \"totalJobs\": 1250,\n    \"activeJobs\": 8,\n    \"completedJobs\": 1235,\n    \"failedJobs\": 7,\n    \"uptime\": \"2 days, 14 hours\"\n  },\n  \"alerts\": []\n}\n```\n\n#### GET /monitoring/metrics\n**Métricas detalhadas**\n\n#### GET /monitoring/alerts\n**Alertas do sistema**\n\n---\n\n### 🧪 4. TESTES ESC/POS\n\n#### GET /escpos-test/margin/:width\n**Testar comandos de margem**\n\n```bash\n# Margem zero para impressora 80mm\nGET /escpos-test/margin/80?printableWidth=80\n\n# Área customizada (80mm → 72mm úteis)\nGET /escpos-test/margin/80?printableWidth=72\n```\n\n#### GET /escpos-test/compare-buffers\n**Comparar buffers com/sem ESC/POS**\n\n#### GET /escpos-test/validate/:printerId\n**Validar integração ESC/POS**\n\n#### POST /escpos-test/advanced-area\n**Teste comando ESC W (avançado)**\n\n```json\n{\n  \"startXMm\": 4,\n  \"startYMm\": 0,\n  \"widthMm\": 72,\n  \"heightMm\": 200\n}\n```\n\n#### GET /escpos-test/info\n**Documentação ESC/POS**\n\n#### GET /escpos-test/scenarios\n**Cenários de teste**\n\n---\n\n### 🔧 5. UTILITÁRIOS\n\n#### GET /print/health\n**Health check do serviço**\n\n#### GET /print/test-connection\n**Teste de conexão com impressora**\n\n---\n\n## 🎯 Casos de Uso Práticos\n\n### 🍕 Restaurante\n\n```json\n{\n  \"printerId\": \"cozinha-1\",\n  \"content\": [\n    {\"type\": \"text\", \"value\": \"PEDIDO #1234\", \"style\": {\"bold\": true, \"align\": \"center\"}},\n    {\"type\": \"text\", \"value\": \"Mesa: 15    Garçom: João\"},\n    {\n      \"type\": \"table\",\n      \"table\": {\n        \"headers\": [\"Item\", \"Qtd\", \"Obs\"],\n        \"rows\": [\n          {\"cells\": [\"Pizza Margherita\", \"1\", \"Sem cebola\"]}\n        ]\n      }\n    },\n    {\"type\": \"qr-code\", \"value\": \"https://restaurante.com/pedido/1234\"},\n    {\"type\": \"cut\"}\n  ]\n}\n```\n\n### 🚚 Delivery\n\n```json\n{\n  \"printerId\": \"delivery-1\",\n  \"content\": [\n    {\"type\": \"text\", \"value\": \"ETIQUETA DE ENTREGA\", \"style\": {\"bold\": true}},\n    {\"type\": \"text\", \"value\": \"Destinatário: Maria Silva\"},\n    {\"type\": \"text\", \"value\": \"Endereço: Rua das Flores, 123\"},\n    {\"type\": \"barcode\", \"value\": \"DEL5678\", \"options\": {\"type\": \"CODE128\"}},\n    {\"type\": \"cut\"}\n  ]\n}\n```\n\n### 🏪 Varejo\n\n```json\n{\n  \"printerId\": \"balcao-1\",\n  \"content\": [\n    {\"type\": \"text\", \"value\": \"LOJA EXEMPLO LTDA\", \"style\": {\"align\": \"center\"}},\n    {\"type\": \"text\", \"value\": \"CUPOM FISCAL ELETRÔNICO\", \"style\": {\"bold\": true}},\n    {\n      \"type\": \"table\",\n      \"table\": {\n        \"headers\": [\"Produto\", \"Qtd\", \"Valor\"],\n        \"rows\": [\n          {\"cells\": [\"Produto A\", \"2\", \"R$ 10,00\"]}\n        ]\n      }\n    },\n    {\"type\": \"qr-code\", \"value\": \"https://nfce.fazenda.gov.br/qrcode?chNFe=...\"},\n    {\"type\": \"cut\"}\n  ]\n}\n```\n\n---\n\n## ⚙️ Configuração Avançada\n\n### 📐 Área de Impressão\n\n**Configuração de Larguras:**\n\n```json\n{\n  \"width\": 80,           // Largura física do papel (mm)\n  \"printableWidth\": 72,  // Área útil desejada (mm)\n  \"charPerLine\": 48      // Caracteres por linha\n}\n```\n\n**Comandos ESC/POS Gerados:**\n- Se `printableWidth < width`: Margens calculadas automaticamente\n- Se `printableWidth = width`: Margem zero (ESC l 0, ESC Q 0)\n- Se `printableWidth` não especificado: Margem zero automática\n\n### 🖼️ Processamento de Imagens\n\n**Pipeline Automático:**\n1. **Redimensionamento**: Para largura da impressora em pixels\n2. **Escala de Cinza**: Conversão otimizada\n3. **Normalização**: Contraste automático\n4. **Brilho**: Ajuste +10% para visibilidade\n5. **Sharpening**: Definição aprimorada\n6. **Threshold**: P&B puros para impressoras\n\n**Cálculo de Pixels:**\n```\nLargura em Pixels = (Largura em mm / 25.4) × DPI\nExemplo: 80mm = (80 / 25.4) × 203 = 640px\n```\n\n### 📊 Tabelas com Larguras Fixas\n\n```json\n{\n  \"type\": \"table\",\n  \"table\": {\n    \"columns\": [\n      {\"width\": 20, \"align\": \"left\"},    // 20 caracteres, esquerda\n      {\"width\": 5, \"align\": \"center\"},   // 5 caracteres, centro\n      {\"width\": 10, \"align\": \"right\"}    // 10 caracteres, direita\n    ],\n    \"separator\": \" | \",                   // Separador entre colunas\n    \"borderChar\": \"-\"                     // Caractere da borda\n  }\n}\n```\n\n### 🔲 QR Codes Configuráveis\n\n```json\n{\n  \"type\": \"qr-code\",\n  \"value\": \"https://exemplo.com\",\n  \"options\": {\n    \"size\": 6,        // Tamanho do módulo (1-16)\n    \"align\": \"center\" // Alinhamento (left, center, right)\n  }\n}\n```\n\n**Tamanhos Recomendados:**\n- `3-4`: Pequeno\n- `5-6`: Médio (recomendado)\n- `7-8`: Grande\n- `9+`: Muito Grande\n\n---\n\n## 🔍 Comandos ESC/POS Implementados\n\n### 📋 Comandos Automáticos\n\n| Comando | Hex | Descrição | Quando Usado |\n|---------|-----|-----------|-------------|\n| `ESC l 0` | `1B 6C 00` | Margem esquerda = 0 | printableWidth = width |\n| `ESC Q 0` | `1B 51 00` | Margem direita = 0 | printableWidth = width |\n| `ESC l n` | `1B 6C n` | Margem esquerda customizada | printableWidth < width |\n| `ESC Q n` | `1B 51 n` | Margem direita customizada | printableWidth < width |\n| `ESC W` | `1B 57 ...` | Área de impressão avançada | Comando opcional |\n\n### 🧮 Cálculo de Unidades\n\n```\nUnidades ESC/POS = (mm / 25.4) × DPI / 8\nExemplo: 4mm = (4 / 25.4) × 203 / 8 ≈ 10 units\n```\n\n### 🧪 Validação\n\n```bash\n# Testar comandos\nGET /escpos-test/margin/80?printableWidth=72\n\n# Validar integração\nGET /escpos-test/validate/cozinha-1\n\n# Comparar buffers\nGET /escpos-test/compare-buffers\n```\n\n---\n\n## 📈 Monitoramento e Métricas\n\n### 🎯 KPIs Principais\n\n- **Taxa de Sucesso**: % de jobs concluídos com sucesso\n- **Tempo Médio**: Tempo médio de processamento\n- **Fila Média**: Número médio de jobs na fila\n- **Uptime**: Tempo de atividade do serviço\n- **Throughput**: Jobs processados por hora\n\n### 🚨 Alertas Automáticos\n\n- **Impressora Offline**: Falha de conexão\n- **Alta Taxa de Erro**: > 5% de falhas\n- **Fila Longa**: > 10 jobs na fila\n- **Tempo de Resposta Alto**: > 30s por job\n- **Espaço em Disco**: < 1GB disponível\n\n### 📊 Dashboard em Tempo Real\n\n```bash\n# Acessar dashboard\nGET /monitoring/dashboard\n\n# Métricas detalhadas\nGET /monitoring/metrics\n\n# Alertas ativos\nGET /monitoring/alerts\n```\n\n---\n\n## 🛠️ Troubleshooting\n\n### ❌ Problemas Comuns\n\n#### 1. Margem ainda presente após comandos ESC/POS\n\n**Sintomas:**\n- Impressão não chega até a borda\n- Espaço em branco nas laterais\n\n**Soluções:**\n```bash\n# Verificar comandos no buffer\nGET /escpos-test/validate/impressora-id\n\n# Testar margem zero\nGET /escpos-test/margin/80?printableWidth=80\n\n# Comparar com/sem ESC/POS\nGET /escpos-test/compare-buffers\n```\n\n#### 2. Imagens não otimizadas\n\n**Sintomas:**\n- Imagens muito claras ou escuras\n- Qualidade ruim na impressão\n\n**Soluções:**\n- Verificar se `width` e `printableWidth` estão corretos\n- Testar com imagens de diferentes contrastes\n- Verificar logs do ImageService\n\n#### 3. Tabelas desalinhadas\n\n**Sintomas:**\n- Colunas não alinhadas\n- Texto cortado\n\n**Soluções:**\n```json\n{\n  \"columns\": [\n    {\"width\": 20, \"align\": \"left\"},\n    {\"width\": 8, \"align\": \"right\"}\n  ]\n}\n```\n\n#### 4. Erro 413 (Request Too Large)\n\n**Sintomas:**\n- Falha ao enviar imagens base64 grandes\n\n**Soluções:**\n- Limite atual: 50MB\n- Redimensionar imagem antes do envio\n- Usar URL ao invés de base64\n\n### 🔧 Debug\n\n```bash\n# Health check\nGET /print/health\n\n# Teste de conexão\nGET /print/test-connection?printerId=cozinha-1\n\n# Status da sessão\nGET /print/status/sess_20241226_143022_abc12\n\n# Logs do sistema\ndocker logs thermal-printer-microservice\n```\n\n---\n\n## 📦 Deployment\n\n### 🐳 Docker\n\n```dockerfile\nFROM node:18-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --only=production\nCOPY dist ./dist\nEXPOSE 3000\nCMD [\"node\", \"dist/main\"]\n```\n\n```bash\n# Build\ndocker build -t thermal-printer-microservice .\n\n# Run\ndocker run -p 3000:3000 thermal-printer-microservice\n```\n\n### ☸️ Kubernetes\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: thermal-printer-microservice\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: thermal-printer\n  template:\n    metadata:\n      labels:\n        app: thermal-printer\n    spec:\n      containers:\n      - name: thermal-printer\n        image: thermal-printer-microservice:latest\n        ports:\n        - containerPort: 3000\n        env:\n        - name: NODE_ENV\n          value: \"production\"\n```\n\n### 🔧 Variáveis de Ambiente\n\n```bash\n# Porta do serviço\nPORT=3000\n\n# Ambiente\nNODE_ENV=production\n\n# Configurações de log\nLOG_LEVEL=info\n\n# Timeout padrão\nDEFAULT_TIMEOUT=5000\n\n# Diretório de configuração\nCONFIG_DIR=/app/config\n```\n\n---\n\n## 🔐 Segurança\n\n### 🛡️ Boas Práticas\n\n- **Validação de Entrada**: Todos os payloads são validados\n- **Rate Limiting**: Implementar limite de requisições\n- **HTTPS**: Usar TLS em produção\n- **Logs**: Não logar dados sensíveis\n- **Firewall**: Restringir acesso às impressoras\n\n### 🔒 Autenticação (Opcional)\n\n```typescript\n// Implementar middleware de autenticação\n@UseGuards(AuthGuard)\n@Controller('print')\nexport class PrinterController {\n  // ...\n}\n```\n\n---\n\n## 📊 Performance\n\n### ⚡ Otimizações\n\n- **Filas Assíncronas**: Processamento não-bloqueante\n- **Cache de Configuração**: Configurações em memória\n- **Pool de Conexões**: Reutilização de conexões\n- **Compressão de Imagens**: Redução de tamanho\n- **Limpeza Automática**: Remoção de arquivos temporários\n\n### 📈 Benchmarks\n\n| Operação | Tempo Médio | Throughput |\n|----------|-------------|------------|\n| Impressão Simples | 50-200ms | 300 jobs/min |\n| Impressão com Imagem | 200-800ms | 100 jobs/min |\n| Processamento de Imagem | 100-500ms | 200 imgs/min |\n| QR Code | 30-100ms | 600 codes/min |\n| Tabela Complexa | 80-300ms | 250 tables/min |\n\n---\n\n## 🤝 Contribuição\n\n### 🔄 Workflow\n\n1. Fork do repositório\n2. Criar branch feature\n3. Implementar mudanças\n4. Executar testes\n5. Criar Pull Request\n\n### 🧪 Testes\n\n```bash\n# Testes unitários\nnpm run test\n\n# Testes e2e\nnpm run test:e2e\n\n# Coverage\nnpm run test:cov\n```\n\n### 📝 Padrões\n\n- **TypeScript**: Tipagem estrita\n- **ESLint**: Linting automático\n- **Prettier**: Formatação de código\n- **Conventional Commits**: Padrão de commits\n\n---\n\n## 📞 Suporte\n\n### 🆘 Canais de Suporte\n\n- **GitHub Issues**: Bugs e feature requests\n- **Documentation**: Documentação completa\n- **Examples**: Exemplos práticos\n- **Postman Collection**: Testes interativos\n\n### 📚 Recursos Adicionais\n\n- [Repositório GitHub](https://github.com/xpertbrdev/thermal-print-service)\n- [Collection Postman](./Thermal-Printer-Complete-API.postman_collection.json)\n- [Exemplos de Configuração](./examples/)\n- [Guias de Teste](./examples/escpos-margin-test.json)\n\n---\n\n## 📄 Licença\n\nMIT License - Veja [LICENSE](LICENSE) para detalhes.\n\n---\n\n## 🎯 Roadmap\n\n### 🚀 Próximas Funcionalidades\n\n- [ ] **Print to PDF**: Emulador de impressora para PDF\n- [ ] **WebSocket**: Notificações em tempo real\n- [ ] **Templates**: Sistema de templates reutilizáveis\n- [ ] **Multi-tenant**: Suporte a múltiplos clientes\n- [ ] **Analytics**: Dashboard avançado de analytics\n- [ ] **API Gateway**: Integração com gateways\n- [ ] **Backup**: Sistema de backup automático\n- [ ] **Clustering**: Suporte a múltiplas instâncias\n\n### 🔧 Melhorias Planejadas\n\n- [ ] **Performance**: Otimizações adicionais\n- [ ] **Monitoring**: Métricas mais detalhadas\n- [ ] **Security**: Autenticação e autorização\n- [ ] **Documentation**: Documentação interativa\n- [ ] **Testing**: Cobertura de testes 100%\n- [ ] **CI/CD**: Pipeline completo\n\n---\n\n**🎉 Microservice de Impressão Térmica - Solução Completa e Profissional!**\n\n*Desenvolvido com ❤️ para a comunidade de desenvolvedores*"
+# Thermal Printer Microservice - Documentação da API
+
+## Visão Geral
+
+Microservice profissional para impressão térmica com suporte completo a comandos ESC/POS, sistema de sessões, filas de impressão e processamento avançado de imagens.
+
+### Principais Funcionalidades
+
+- **Sistema de Sessões**: Controle total de jobs de impressão com IDs únicos
+- **Múltiplas Impressoras**: Suporte simultâneo a diferentes impressoras
+- **Comandos ESC/POS**: Eliminação automática de margens físicas
+- **Processamento de Imagens**: Otimização automática para impressão térmica
+- **Filas Inteligentes**: Processamento sequencial por impressora
+- **Monitoramento**: Dashboard e métricas em tempo real
+- **QR Codes Configuráveis**: Tamanho e alinhamento personalizáveis
+- **Tabelas com Larguras Fixas**: Alinhamento perfeito de colunas
+
+## Início Rápido
+
+### 1. Instalação e Execução
+
+```bash
+# Clonar repositório
+git clone https://github.com/xpertbrdev/thermal-print-service.git
+cd thermal-print-service
+
+# Instalar dependências
+npm install
+
+# Executar em desenvolvimento
+npm run start:dev
+
+# Executar em produção
+npm run build
+npm run start:prod
+```
+
+### 2. Configuração Inicial
+
+```bash
+# Configurar impressoras
+curl -X POST http://localhost:3000/config \
+  -H "Content-Type: application/json" \
+  -d @examples/printer-config-updated.json
+
+# Verificar saúde do serviço
+curl http://localhost:3000/print/health
+```
+
+### 3. Primeira Impressão
+
+```bash
+# Impressão simples
+curl -X POST http://localhost:3000/print/session \
+  -H "Content-Type: application/json" \
+  -d '{
+    "printerId": "cozinha-1",
+    "content": [
+      {"type": "text", "value": "Olá Mundo!", "style": {"bold": true}},
+      {"type": "cut"}
+    ]
+  }'
+```
+
+## Endpoints da API
+
+### 1. CONFIGURAÇÃO
+
+#### POST /config
+Configura múltiplas impressoras
+
+**Payload de exemplo:**
+```json
+{
+  "printers": [
+    {
+      "id": "cozinha-1",
+      "name": "Impressora Cozinha 80mm",
+      "type": "epson",
+      "connectionType": "network",
+      "address": "192.168.1.100",
+      "charPerLine": 48,
+      "width": 80,
+      "printableWidth": 80,
+      "characterSet": "PC852_LATIN2",
+      "timeout": 5000
+    }
+  ],
+  "defaultSettings": {
+    "charPerLine": 48,
+    "width": 80,
+    "printableWidth": 80,
+    "characterSet": "PC852_LATIN2",
+    "timeout": 5000
+  }
+}
+```
+
+**Comandos ESC/POS Automáticos:**
+- `ESC l 0` (1B 6C 00) - Margem esquerda zero
+- `ESC Q 0` (1B 51 00) - Margem direita zero
+- Ou margens customizadas baseadas em `printableWidth`
+
+#### GET /config
+Consulta todas as configurações
+
+#### GET /config/printers
+Lista impressoras configuradas
+
+#### GET /config/printers/:id
+Detalhes de impressora específica
+
+### 2. IMPRESSÃO COM SESSÕES
+
+#### POST /print/session
+Impressão com controle de sessão
+
+**Payload de exemplo:**
+```json
+{
+  "printerId": "cozinha-1",
+  "sessionId": "sess_20241226_143022_abc12",
+  "priority": "normal",
+  "content": [
+    {
+      "type": "text",
+      "value": "PEDIDO #1234",
+      "style": {
+        "bold": true,
+        "align": "center",
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "type": "table",
+      "table": {
+        "headers": ["Item", "Qtd", "Valor"],
+        "rows": [
+          {"cells": ["Pizza Margherita", "1", "R$ 35,00"]}
+        ],
+        "columns": [
+          {"width": 24, "align": "left"},
+          {"width": 4, "align": "center"},
+          {"width": 12, "align": "right"}
+        ],
+        "separator": " | ",
+        "borderChar": "-"
+      }
+    },
+    {
+      "type": "image",
+      "base64": "data:image/png;base64,iVBORw0KGgo..."
+    },
+    {
+      "type": "qr-code",
+      "value": "https://exemplo.com/pedido/1234",
+      "options": {
+        "size": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "barcode",
+      "value": "1234567890",
+      "options": {
+        "type": "CODE128",
+        "width": 2,
+        "height": 100,
+        "align": "center"
+      }
+    },
+    {"type": "cut"}
+  ]
+}
+```
+
+**Tipos de Conteúdo Suportados:**
+
+| Tipo | Descrição | Opções |
+|------|-----------|--------|
+| `text` | Texto formatado | `bold`, `align`, `width`, `height` |
+| `image` | Imagem (URL/base64/local) | Otimização automática |
+| `table` | Tabela com larguras fixas | `columns`, `separator`, `borderChar` |
+| `qr-code` | QR Code configurável | `size`, `align` |
+| `barcode` | Código de barras | `type`, `width`, `height`, `align` |
+| `line` | Linha de caracteres | `character`, `length` |
+| `new-line` | Quebra de linha | - |
+| `cut` | Corte do papel | - |
+| `beep` | Som da impressora | - |
+| `cash-drawer` | Abertura da gaveta | - |
+
+#### POST /print
+Impressão simples (sem sessão)
+
+#### GET /print/status/:sessionId
+Status da sessão
+
+**Estados possíveis:**
+- `queued` - Na fila aguardando
+- `printing` - Sendo processado
+- `completed` - Concluído com sucesso
+- `failed` - Falhou na execução
+- `cancelled` - Cancelado pelo usuário
+
+#### DELETE /print/cancel/:sessionId
+Cancelar sessão
+
+### 3. MONITORAMENTO E FILAS
+
+#### GET /print/queue/:printerId
+Fila de impressão da impressora
+
+#### DELETE /print/queue/:printerId/clear
+Limpar fila da impressora
+
+#### GET /print/queue/stats
+Estatísticas das filas
+
+#### GET /print/sessions
+Listar sessões ativas
+
+#### GET /monitoring/dashboard
+Dashboard completo
+
+**Exemplo de resposta:**
+```json
+{
+  "timestamp": "2024-12-26T14:30:22.123Z",
+  "printers": {
+    "cozinha-1": {
+      "status": "online",
+      "queueSize": 3,
+      "processing": "sess_20241226_143022_abc12",
+      "lastJob": "2024-12-26T14:29:15.456Z",
+      "totalJobs": 127,
+      "successRate": 98.4
+    }
+  },
+  "system": {
+    "totalJobs": 1250,
+    "activeJobs": 8,
+    "completedJobs": 1235,
+    "failedJobs": 7,
+    "uptime": "2 days, 14 hours"
+  },
+  "alerts": []
+}
+```
+
+#### GET /monitoring/metrics
+Métricas detalhadas
+
+#### GET /monitoring/alerts
+Alertas do sistema
+
+### 4. TESTES ESC/POS
+
+#### GET /escpos-test/margin/:width
+Testar comandos de margem
+
+```bash
+# Margem zero para impressora 80mm
+GET /escpos-test/margin/80?printableWidth=80
+
+# Área customizada (80mm → 72mm úteis)
+GET /escpos-test/margin/80?printableWidth=72
+```
+
+#### GET /escpos-test/compare-buffers
+Comparar buffers com/sem ESC/POS
+
+#### GET /escpos-test/validate/:printerId
+Validar integração ESC/POS
+
+#### POST /escpos-test/advanced-area
+Teste comando ESC W (avançado)
+
+```json
+{
+  "startXMm": 4,
+  "startYMm": 0,
+  "widthMm": 72,
+  "heightMm": 200
+}
+```
+
+#### GET /escpos-test/info
+Documentação ESC/POS
+
+#### GET /escpos-test/scenarios
+Cenários de teste
+
+### 5. UTILITÁRIOS
+
+#### GET /print/health
+Health check do serviço
+
+#### GET /print/test-connection
+Teste de conexão com impressora
+
+## Casos de Uso Práticos
+
+### Restaurante
+
+```json
+{
+  "printerId": "cozinha-1",
+  "content": [
+    {"type": "text", "value": "PEDIDO #1234", "style": {"bold": true, "align": "center"}},
+    {"type": "text", "value": "Mesa: 15    Garçom: João"},
+    {
+      "type": "table",
+      "table": {
+        "headers": ["Item", "Qtd", "Obs"],
+        "rows": [
+          {"cells": ["Pizza Margherita", "1", "Sem cebola"]}
+        ]
+      }
+    },
+    {"type": "qr-code", "value": "https://restaurante.com/pedido/1234"},
+    {"type": "cut"}
+  ]
+}
+```
+
+### Delivery
+
+```json
+{
+  "printerId": "delivery-1",
+  "content": [
+    {"type": "text", "value": "ETIQUETA DE ENTREGA", "style": {"bold": true}},
+    {"type": "text", "value": "Destinatário: Maria Silva"},
+    {"type": "text", "value": "Endereço: Rua das Flores, 123"},
+    {"type": "barcode", "value": "DEL5678", "options": {"type": "CODE128"}},
+    {"type": "cut"}
+  ]
+}
+```
+
+### Varejo
+
+```json
+{
+  "printerId": "balcao-1",
+  "content": [
+    {"type": "text", "value": "LOJA EXEMPLO LTDA", "style": {"align": "center"}},
+    {"type": "text", "value": "CUPOM FISCAL ELETRÔNICO", "style": {"bold": true}},
+    {
+      "type": "table",
+      "table": {
+        "headers": ["Produto", "Qtd", "Valor"],
+        "rows": [
+          {"cells": ["Produto A", "2", "R$ 10,00"]}
+        ]
+      }
+    },
+    {"type": "qr-code", "value": "https://nfce.fazenda.gov.br/qrcode?chNFe=..."},
+    {"type": "cut"}
+  ]
+}
+```
+
+## Configuração Avançada
+
+### Área de Impressão
+
+**Configuração de Larguras:**
+
+```json
+{
+  "width": 80,           // Largura física do papel (mm)
+  "printableWidth": 72,  // Área útil desejada (mm)
+  "charPerLine": 48      // Caracteres por linha
+}
+```
+
+**Comandos ESC/POS Gerados:**
+- Se `printableWidth < width`: Margens calculadas automaticamente
+- Se `printableWidth = width`: Margem zero (ESC l 0, ESC Q 0)
+- Se `printableWidth` não especificado: Margem zero automática
+
+### Processamento de Imagens
+
+**Pipeline Automático:**
+1. **Redimensionamento**: Para largura da impressora em pixels
+2. **Escala de Cinza**: Conversão otimizada
+3. **Normalização**: Contraste automático
+4. **Brilho**: Ajuste +10% para visibilidade
+5. **Sharpening**: Definição aprimorada
+6. **Threshold**: P&B puros para impressoras
+
+**Cálculo de Pixels:**
+```
+Largura em Pixels = (Largura em mm / 25.4) × DPI
+Exemplo: 80mm = (80 / 25.4) × 203 = 640px
+```
+
+### Tabelas com Larguras Fixas
+
+```json
+{
+  "type": "table",
+  "table": {
+    "columns": [
+      {"width": 20, "align": "left"},    // 20 caracteres, esquerda
+      {"width": 5, "align": "center"},   // 5 caracteres, centro
+      {"width": 10, "align": "right"}    // 10 caracteres, direita
+    ],
+    "separator": " | ",                   // Separador entre colunas
+    "borderChar": "-"                     // Caractere da borda
+  }
+}
+```
+
+### QR Codes Configuráveis
+
+```json
+{
+  "type": "qr-code",
+  "value": "https://exemplo.com",
+  "options": {
+    "size": 6,        // Tamanho do módulo (1-16)
+    "align": "center" // Alinhamento (left, center, right)
+  }
+}
+```
+
+**Tamanhos Recomendados:**
+- `3-4`: Pequeno
+- `5-6`: Médio (recomendado)
+- `7-8`: Grande
+- `9+`: Muito Grande
+
+## Comandos ESC/POS Implementados
+
+### Comandos Automáticos
+
+| Comando | Hex | Descrição | Quando Usado |
+|---------|-----|-----------|-------------|
+| `ESC l 0` | `1B 6C 00` | Margem esquerda = 0 | printableWidth = width |
+| `ESC Q 0` | `1B 51 00` | Margem direita = 0 | printableWidth = width |
+| `ESC l n` | `1B 6C n` | Margem esquerda customizada | printableWidth < width |
+| `ESC Q n` | `1B 51 n` | Margem direita customizada | printableWidth < width |
+| `ESC W` | `1B 57 ...` | Área de impressão avançada | Comando opcional |
+
+### Cálculo de Unidades
+
+```
+Unidades ESC/POS = (mm / 25.4) × DPI / 8
+Exemplo: 4mm = (4 / 25.4) × 203 / 8 ≈ 10 units
+```
+
+### Validação
+
+```bash
+# Testar comandos
+GET /escpos-test/margin/80?printableWidth=72
+
+# Validar integração
+GET /escpos-test/validate/cozinha-1
+
+# Comparar buffers
+GET /escpos-test/compare-buffers
+```
+
+## Monitoramento e Métricas
+
+### KPIs Principais
+
+- **Taxa de Sucesso**: % de jobs concluídos com sucesso
+- **Tempo Médio**: Tempo médio de processamento
+- **Fila Média**: Número médio de jobs na fila
+- **Uptime**: Tempo de atividade do serviço
+- **Throughput**: Jobs processados por hora
+
+### Alertas Automáticos
+
+- **Impressora Offline**: Falha de conexão
+- **Alta Taxa de Erro**: > 5% de falhas
+- **Fila Longa**: > 10 jobs na fila
+- **Tempo de Resposta Alto**: > 30s por job
+- **Espaço em Disco**: < 1GB disponível
+
+### Dashboard em Tempo Real
+
+```bash
+# Acessar dashboard
+GET /monitoring/dashboard
+
+# Métricas detalhadas
+GET /monitoring/metrics
+
+# Alertas ativos
+GET /monitoring/alerts
+```
+
+## Troubleshooting
+
+### Problemas Comuns
+
+#### 1. Margem ainda presente após comandos ESC/POS
+
+**Sintomas:**
+- Impressão não chega até a borda
+- Espaço em branco nas laterais
+
+**Soluções:**
+```bash
+# Verificar comandos no buffer
+GET /escpos-test/validate/impressora-id
+
+# Testar margem zero
+GET /escpos-test/margin/80?printableWidth=80
+
+# Comparar com/sem ESC/POS
+GET /escpos-test/compare-buffers
+```
+
+#### 2. Imagens não otimizadas
+
+**Sintomas:**
+- Imagens muito claras ou escuras
+- Qualidade ruim na impressão
+
+**Soluções:**
+- Verificar se `width` e `printableWidth` estão corretos
+- Testar com imagens de diferentes contrastes
+- Verificar logs do ImageService
+
+#### 3. Tabelas desalinhadas
+
+**Sintomas:**
+- Colunas não alinhadas
+- Texto cortado
+
+**Soluções:**
+```json
+{
+  "columns": [
+    {"width": 20, "align": "left"},
+    {"width": 8, "align": "right"}
+  ]
+}
+```
+
+#### 4. Erro 413 (Request Too Large)
+
+**Sintomas:**
+- Falha ao enviar imagens base64 grandes
+
+**Soluções:**
+- Limite atual: 50MB
+- Redimensionar imagem antes do envio
+- Usar URL ao invés de base64
+
+### Debug
+
+```bash
+# Health check
+GET /print/health
+
+# Teste de conexão
+GET /print/test-connection?printerId=cozinha-1
+
+# Status da sessão
+GET /print/status/sess_20241226_143022_abc12
+
+# Logs do sistema
+docker logs thermal-printer-microservice
+```
+
+## Deployment
+
+### Docker
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY dist ./dist
+EXPOSE 3000
+CMD ["node", "dist/main"]
+```
+
+```bash
+# Build
+docker build -t thermal-printer-microservice .
+
+# Run
+docker run -p 3000:3000 thermal-printer-microservice
+```
+
+### Kubernetes
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thermal-printer-microservice
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: thermal-printer
+  template:
+    metadata:
+      labels:
+        app: thermal-printer
+    spec:
+      containers:
+      - name: thermal-printer
+        image: thermal-printer-microservice:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+```
+
+### Variáveis de Ambiente
+
+```bash
+# Porta do serviço
+PORT=3000
+
+# Ambiente
+NODE_ENV=production
+
+# Configurações de log
+LOG_LEVEL=info
+
+# Timeout padrão
+DEFAULT_TIMEOUT=5000
+
+# Diretório de configuração
+CONFIG_DIR=/app/config
+```
+
+## Segurança
+
+### Boas Práticas
+
+- **Validação de Entrada**: Todos os payloads são validados
+- **Rate Limiting**: Implementar limite de requisições
+- **HTTPS**: Usar TLS em produção
+- **Logs**: Não logar dados sensíveis
+- **Firewall**: Restringir acesso às impressoras
+
+### Autenticação (Opcional)
+
+```typescript
+// Implementar middleware de autenticação
+@UseGuards(AuthGuard)
+@Controller('print')
+export class PrinterController {
+  // ...
+}
+```
+
+## Performance
+
+### Otimizações
+
+- **Filas Assíncronas**: Processamento não-bloqueante
+- **Cache de Configuração**: Configurações em memória
+- **Pool de Conexões**: Reutilização de conexões
+- **Compressão de Imagens**: Redução de tamanho
+- **Limpeza Automática**: Remoção de arquivos temporários
+
+### Benchmarks
+
+| Operação | Tempo Médio | Throughput |
+|----------|-------------|------------|
+| Impressão Simples | 50-200ms | 300 jobs/min |
+| Impressão com Imagem | 200-800ms | 100 jobs/min |
+| Processamento de Imagem | 100-500ms | 200 imgs/min |
+| QR Code | 30-100ms | 600 codes/min |
+| Tabela Complexa | 80-300ms | 250 tables/min |
+
+## Contribuição
+
+### Workflow
+
+1. Fork do repositório
+2. Criar branch feature
+3. Implementar mudanças
+4. Executar testes
+5. Criar Pull Request
+
+### Testes
+
+```bash
+# Testes unitários
+npm run test
+
+# Testes e2e
+npm run test:e2e
+
+# Coverage
+npm run test:cov
+```
+
+### Padrões
+
+- **TypeScript**: Tipagem estrita
+- **ESLint**: Linting automático
+- **Prettier**: Formatação de código
+- **Conventional Commits**: Padrão de commits
+
+## Suporte
+
+### Canais de Suporte
+
+- **GitHub Issues**: Bugs e feature requests
+- **Documentation**: Documentação completa
+- **Examples**: Exemplos práticos
+- **Postman Collection**: Testes interativos
+
+### Recursos Adicionais
+
+- [Repositório GitHub](https://github.com/xpertbrdev/thermal-print-service)
+- [Collection Postman](./Thermal-Printer-Complete-API.postman_collection.json)
+- [Exemplos de Configuração](./examples/)
+- [Guias de Teste](./examples/escpos-margin-test.json)
+
+## Licença
+
+MIT License - Veja [LICENSE](LICENSE) para detalhes.
+
+## Roadmap
+
+### Próximas Funcionalidades
+
+- [ ] **Print to PDF**: Emulador de impressora para PDF
+- [ ] **WebSocket**: Notificações em tempo real
+- [ ] **Templates**: Sistema de templates reutilizáveis
+- [ ] **Multi-tenant**: Suporte a múltiplos clientes
+- [ ] **Analytics**: Dashboard avançado de analytics
+- [ ] **API Gateway**: Integração com gateways
+- [ ] **Backup**: Sistema de backup automático
+- [ ] **Clustering**: Suporte a múltiplas instâncias
+
+### Melhorias Planejadas
+
+- [ ] **Performance**: Otimizações adicionais
+- [ ] **Monitoring**: Métricas mais detalhadas
+- [ ] **Security**: Autenticação e autorização
+- [ ] **Documentation**: Documentação interativa
+- [ ] **Testing**: Cobertura de testes 100%
+- [ ] **CI/CD**: Pipeline completo
+
+---
+
+**Microservice de Impressão Térmica - Solução Completa e Profissional!**
+
+*Desenvolvido com ❤️ para a comunidade de desenvolvedores*
