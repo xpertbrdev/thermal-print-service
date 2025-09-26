@@ -587,32 +587,32 @@ export class PrinterService {
       this.logger.log('Processando PDF para impressão');
 
       // Processar PDF usando PdfService
-      const result = await this.pdfService.processPdf(item.pdf, {
-        printerId: this.currentPrinterId,
-        quality: item.quality || 100,
-        pages: item.pages, // Páginas específicas se especificado
-        format: 'png', // Sempre PNG para melhor qualidade
-      });
-
-      if (!result.success || result.images.length === 0) {
-        const errorMsg = `Falha no processamento do PDF: ${result.errors.join(', ')}`;
+      const result = await this.pdfService.processPdfForThermalPrinting(
+        item.pdf,
+        this.currentPrinterId,
+        {
+          quality: item.quality || 100,
+          pages: item.pages, // Páginas específicas se especificado
+          format: 'png', // Sempre PNG para melhor qualidade
+        }
+      );
+      if (!result.success || !result.optimizedPaths || result.optimizedPaths.length === 0) {
+        const errorMsg = `Falha no processamento do PDF: ${result.error}`;
         this.logger.error(errorMsg);
         throw new Error(errorMsg);
       }
 
-      this.logger.log(`PDF convertido em ${result.images.length} imagens otimizadas`);
-
-      // Imprimir cada página como imagem
-      for (let i = 0; i < result.images.length; i++) {
-        const imagePath = result.images[i];
-        this.logger.log(`Imprimindo página ${i + 1}/${result.images.length}: ${imagePath}`);
+      // Processar cada imagem gerada do PDF
+      for (let i = 0; i < result.optimizedPaths.length; i++) {
+        const imagePath = result.optimizedPaths[i];
+        this.logger.log(`Imprimindo página ${i + 1}/${result.optimizedPaths.length}: ${imagePath}`);
 
         try {
           // Usar método de impressão de imagem existente
           await printer.printImage(imagePath);
           
           // Adicionar quebra de linha entre páginas (exceto na última)
-          if (i < result.images.length - 1) {
+          if (i < result.optimizedPaths.length - 1) {
             printer.newLine();
             printer.newLine(); // Espaço extra entre páginas
           }

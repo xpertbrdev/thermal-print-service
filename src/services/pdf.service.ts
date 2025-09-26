@@ -1,309 +1,405 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ImageService } from './image.service';
 import { ConfigService } from './config.service';
+import { ImageService } from './image.service';
+import { pdfToPng } from 'pdf-to-png-converter';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as pdf2pic from 'pdf2pic';
+import * as crypto from 'crypto';
 
 export interface PdfProcessingOptions {
-  printerId: string;
   quality?: number;
   density?: number;
   format?: 'png' | 'jpeg';
-  pages?: 'all' | number[];
-  outputDir?: string;
+  pages?: number[];
+  width?: number;
+  height?: number;
 }
 
 export interface PdfProcessingResult {
   success: boolean;
-  images: string[];
-  totalPages: number;
   processedPages: number;
-  errors: string[];
+  totalPages: number;
   processingTime: number;
+  outputPaths: string[];
+  optimizedPaths?: string[];
+  error?: string;
+}
+
+export interface PdfInfo {
+  pages: number;
+  size: number;
+  format: string;
+  title?: string;
+  author?: string;
+  subject?: string;
+  creator?: string;
+  producer?: string;
+  creationDate?: Date;
+  modificationDate?: Date;
 }
 
 @Injectable()
 export class PdfService {
   private readonly logger = new Logger(PdfService.name);
-  private readonly tempDir = path.join(process.cwd(), 'temp', 'pdf');
+  private readonly tempDir = '/tmp/thermal-printer-pdf';
 
   constructor(
-    private readonly imageService: ImageService,
     private readonly configService: ConfigService,
+    private readonly imageService: ImageService,
   ) {
-    // Criar diretório temporário se não existir
     this.ensureTempDirectory();
   }
 
   /**
-   * Processa PDF (base64 ou arquivo) e converte para imagens otimizadas
+   * Processar PDF para impressão térmica usando pdf-to-png-converter (sem dependências externas)
    */
-  async processPdf(
-    pdfInput: string,
-    options: PdfProcessingOptions,
+  async processPdfForThermalPrinting(
+    pdfInput: string | Buffer,
+    printerId: string,
+    options: PdfProcessingOptions = {},
   ): Promise<PdfProcessingResult> {
     const startTime = Date.now();
-    this.logger.log(`Iniciando processamento de PDF para impressora: ${options.printerId}`);
-
-    const result: PdfProcessingResult = {
-      success: false,
-      images: [],
-      totalPages: 0,
-      processedPages: 0,
-      errors: [],
-      processingTime: 0,
-    };
+    this.logger.log(`Iniciando processamento PDF para impressora: ${printerId}`);
 
     try {
-      // 1. Preparar arquivo PDF
-      const pdfPath = await this.preparePdfFile(pdfInput);
-      this.logger.log(`PDF preparado em: ${pdfPath}`);
+      // 1. Preparar PDF buffer
+      const pdfBuffer = await this.preparePdfBuffer(pdfInput);
+      this.logger.log(`PDF preparado: ${pdfBuffer.length} bytes`);
 
       // 2. Obter configuração da impressora
-      const printerConfig = await this.configService.getPrinterConfig(options.printerId);
+      const printerConfig = await this.configService.getPrinterConfig(printerId);
       if (!printerConfig) {
-        throw new Error(`Impressora não encontrada: ${options.printerId}`);
+        throw new Error(`Impressora não encontrada: ${printerId}`);
       }
 
-      // 3. Configurar opções de conversão
-      const conversionOptions = this.buildConversionOptions(printerConfig, options);
-      this.logger.log(`Opções de conversão: ${JSON.stringify(conversionOptions)}`);
+      // 3. Calcular configurações otimizadas
+      const processingOptions = this.calculateOptimalSettings(printerConfig, options);
+      this.logger.log(`Configurações calculadas:`, processingOptions);
 
-      // 4. Converter PDF para imagens
-      const images = await this.convertPdfToImages(pdfPath, conversionOptions);
-      result.totalPages = images.length;
-      this.logger.log(`PDF convertido em ${images.length} páginas`);
+      // 4. Converter PDF para PNG usando pdf-to-png-converter
+      const pngPages = await this.convertPdfToPng(pdfBuffer, processingOptions);
+      this.logger.log(`Conversão concluída: ${pngPages.length} páginas`);
 
-      // 5. Otimizar cada imagem para impressão térmica
-      const optimizedImages: string[] = [];
-      for (let i = 0; i < images.length; i++) {
-        try {
-          this.logger.log(`Otimizando página ${i + 1}/${images.length}`);
-          const optimizedPath = await this.imageService.optimizeImageForThermalPrinting(
-            images[i],
-            printerConfig.printableWidth || printerConfig.width || 80,
-          );
-          optimizedImages.push(optimizedPath);
-          result.processedPages++;
-        } catch (error) {
-          const errorMsg = `Erro ao otimizar página ${i + 1}: ${error.message}`;
-          this.logger.error(errorMsg);
-          result.errors.push(errorMsg);
-        }
-      }
+      // 5. Otimizar imagens para impressão térmica
+      const optimizedPaths = await this.optimizeImagesForThermalPrinting(
+        pngPages.map(page => page.path),
+        printerConfig,
+      );
 
-      // 6. Limpeza de arquivos temporários originais
-      await this.cleanupTempFiles([pdfPath, ...images]);
-
-      result.success = optimizedImages.length > 0;
-      result.images = optimizedImages;
-      result.processingTime = Date.now() - startTime;
-
-      this.logger.log(`PDF processado com sucesso: ${result.processedPages}/${result.totalPages} páginas em ${result.processingTime}ms`);
-      return result;
-
-    } catch (error) {
-      const errorMsg = `Erro no processamento de PDF: ${error.message}`;
-      this.logger.error(errorMsg);
-      result.errors.push(errorMsg);
-      result.processingTime = Date.now() - startTime;
-      return result;
-    }
-  }
-
-  /**
-   * Prepara arquivo PDF a partir de base64 ou caminho
-   */
-  private async preparePdfFile(pdfInput: string): Promise<string> {
-    // Verificar se é base64
-    if (this.isBase64Pdf(pdfInput)) {
-      return this.saveBase64AsPdf(pdfInput);
-    }
-
-    // Verificar se é URL
-    if (this.isUrl(pdfInput)) {
-      return this.downloadPdfFromUrl(pdfInput);
-    }
-
-    // Assumir que é caminho de arquivo
-    if (fs.existsSync(pdfInput)) {
-      return pdfInput;
-    }
-
-    throw new Error(`PDF não encontrado ou formato inválido: ${pdfInput}`);
-  }
-
-  /**
-   * Verifica se input é base64 PDF
-   */
-  private isBase64Pdf(input: string): boolean {
-    return input.startsWith('data:application/pdf;base64,') || 
-           (input.length > 100 && /^[A-Za-z0-9+/]+=*$/.test(input));
-  }
-
-  /**
-   * Verifica se input é URL
-   */
-  private isUrl(input: string): boolean {
-    try {
-      new URL(input);
-      return input.startsWith('http://') || input.startsWith('https://');
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Salva base64 como arquivo PDF
-   */
-  private async saveBase64AsPdf(base64Input: string): Promise<string> {
-    let base64Data = base64Input;
-    
-    // Remover prefixo se presente
-    if (base64Data.startsWith('data:application/pdf;base64,')) {
-      base64Data = base64Data.replace('data:application/pdf;base64,', '');
-    }
-
-    const fileName = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.pdf`;
-    const filePath = path.join(this.tempDir, fileName);
-
-    try {
-      const buffer = Buffer.from(base64Data, 'base64');
-      await fs.promises.writeFile(filePath, buffer);
-      
-      this.logger.log(`PDF base64 salvo: ${filePath} (${buffer.length} bytes)`);
-      return filePath;
-    } catch (error) {
-      throw new Error(`Erro ao salvar PDF base64: ${error.message}`);
-    }
-  }
-
-  /**
-   * Download PDF de URL
-   */
-  private async downloadPdfFromUrl(url: string): Promise<string> {
-    const fileName = `pdf_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.pdf`;
-    const filePath = path.join(this.tempDir, fileName);
-
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const buffer = await response.arrayBuffer();
-      await fs.promises.writeFile(filePath, Buffer.from(buffer));
-      
-      this.logger.log(`PDF baixado: ${filePath} (${buffer.byteLength} bytes)`);
-      return filePath;
-    } catch (error) {
-      throw new Error(`Erro ao baixar PDF: ${error.message}`);
-    }
-  }
-
-  /**
-   * Constrói opções de conversão baseadas na impressora
-   */
-  private buildConversionOptions(printerConfig: any, options: PdfProcessingOptions) {
-    // Calcular DPI baseado na largura da impressora
-    const printerWidthMm = printerConfig.printableWidth || printerConfig.width || 80;
-    const targetDpi = this.calculateOptimalDpi(printerWidthMm);
-
-    return {
-      density: options.density || targetDpi,
-      saveFilename: 'page',
-      savePath: this.tempDir,
-      format: options.format || 'png',
-      width: Math.round((printerWidthMm / 25.4) * targetDpi), // Converter mm para pixels
-      quality: options.quality || 100,
-    };
-  }
-
-  /**
-   * Calcula DPI ótimo baseado na largura da impressora
-   */
-  private calculateOptimalDpi(widthMm: number): number {
-    // DPI padrão para impressoras térmicas
-    const standardDpi = 203;
-    
-    // Ajustar DPI baseado na largura para otimizar qualidade vs tamanho
-    if (widthMm <= 58) return 180;      // 58mm - DPI menor para arquivos menores
-    if (widthMm <= 80) return 203;      // 80mm - DPI padrão
-    if (widthMm <= 112) return 225;     // 112mm - DPI maior para mais detalhes
-    return 250;                         // Impressoras maiores
-  }
-
-  /**
-   * Converte PDF para imagens usando pdf2pic
-   */
-  private async convertPdfToImages(pdfPath: string, options: any): Promise<string[]> {
-    try {
-      const convert = pdf2pic.fromPath(pdfPath, options);
-      
-      // Converter todas as páginas
-      const results = await convert.bulk(-1, { responseType: 'image' });
-      
-      const imagePaths: string[] = [];
-      for (const result of results) {
-        if (result.path) {
-          imagePaths.push(result.path);
-        }
-      }
-
-      if (imagePaths.length === 0) {
-        throw new Error('Nenhuma página foi convertida');
-      }
-
-      this.logger.log(`${imagePaths.length} páginas convertidas com sucesso`);
-      return imagePaths;
-
-    } catch (error) {
-      throw new Error(`Erro na conversão PDF→Imagem: ${error.message}`);
-    }
-  }
-
-  /**
-   * Obtém informações do PDF
-   */
-  async getPdfInfo(pdfInput: string): Promise<{
-    pages: number;
-    size: number;
-    format: string;
-    encrypted: boolean;
-  }> {
-    try {
-      const pdfPath = await this.preparePdfFile(pdfInput);
-      const stats = await fs.promises.stat(pdfPath);
-      
-      // Para obter número de páginas, fazemos uma conversão rápida
-      const convert = pdf2pic.fromPath(pdfPath, {
-        density: 72, // DPI baixo para rapidez
-        format: 'png',
-        width: 100,  // Tamanho mínimo para rapidez
-      });
-      
-      const results = await convert.bulk(-1, { responseType: 'image' });
-      
-      // Limpar arquivo temporário se foi criado
-      if (pdfInput !== pdfPath) {
-        await this.cleanupTempFiles([pdfPath]);
-      }
+      const processingTime = Date.now() - startTime;
+      this.logger.log(`Processamento PDF concluído em ${processingTime}ms`);
 
       return {
-        pages: results.length,
-        size: stats.size,
-        format: 'PDF',
-        encrypted: false, // pdf2pic falharia se fosse criptografado
+        success: true,
+        processedPages: pngPages.length,
+        totalPages: pngPages.length,
+        processingTime,
+        outputPaths: pngPages.map(page => page.path),
+        optimizedPaths,
       };
 
     } catch (error) {
-      throw new Error(`Erro ao obter informações do PDF: ${error.message}`);
+      const processingTime = Date.now() - startTime;
+      this.logger.error(`Erro no processamento PDF: ${error.message}`);
+      
+      return {
+        success: false,
+        processedPages: 0,
+        totalPages: 0,
+        processingTime,
+        outputPaths: [],
+        error: error.message,
+      };
     }
   }
 
   /**
-   * Cria diretório temporário
+   * Obter informações do PDF
+   */
+  async getPdfInfo(pdfInput: string | Buffer): Promise<PdfInfo> {
+    this.logger.log('Obtendo informações do PDF...');
+
+    try {
+      const pdfBuffer = await this.preparePdfBuffer(pdfInput);
+      
+      // Usar pdf-to-png-converter para obter informações básicas
+      const tempId = this.generateTempId();
+      const tempFolder = path.join(this.tempDir, tempId);
+      
+      // Criar pasta temporária
+      if (!fs.existsSync(tempFolder)) {
+        fs.mkdirSync(tempFolder, { recursive: true });
+      }
+
+      try {
+        // Converter apenas para contar páginas (sem salvar)
+        const pngPages = await pdfToPng(pdfBuffer, {
+          outputFolder: tempFolder,
+          outputFileMaskFunc: (pageNumber) => `info_page_${pageNumber}`,
+          pagesToProcess: [-1] // Todas as páginas
+        });
+
+        const info: PdfInfo = {
+          pages: pngPages.length,
+          size: pdfBuffer.length,
+          format: 'PDF',
+          title: 'Documento PDF',
+          creator: 'pdf-to-png-converter',
+          producer: 'Thermal Printer Microservice',
+          creationDate: new Date(),
+          modificationDate: new Date(),
+        };
+
+        this.logger.log(`Informações PDF obtidas: ${info.pages} páginas, ${info.size} bytes`);
+        return info;
+
+      } finally {
+        // Limpar arquivos temporários
+        this.cleanupTempFolder(tempFolder);
+      }
+
+    } catch (error) {
+      this.logger.error(`Erro ao obter informações do PDF: ${error.message}`);
+      throw new Error(`Falha ao processar PDF: ${error.message}`);
+    }
+  }
+
+  /**
+   * Preparar buffer do PDF a partir de diferentes inputs
+   */
+  private async preparePdfBuffer(pdfInput: string | Buffer): Promise<Buffer> {
+    if (Buffer.isBuffer(pdfInput)) {
+      return pdfInput;
+    }
+
+    if (typeof pdfInput === 'string') {
+      // Base64 com prefixo
+      if (pdfInput.startsWith('data:application/pdf;base64,')) {
+        const base64Data = pdfInput.replace('data:application/pdf;base64,', '');
+        return Buffer.from(base64Data, 'base64');
+      }
+
+      // Base64 puro
+      if (this.isBase64(pdfInput)) {
+        return Buffer.from(pdfInput, 'base64');
+      }
+
+      // URL
+      if (pdfInput.startsWith('http://') || pdfInput.startsWith('https://')) {
+        this.logger.log(`Baixando PDF de URL: ${pdfInput}`);
+        const response = await fetch(pdfInput);
+        if (!response.ok) {
+          throw new Error(`Falha ao baixar PDF: ${response.statusText}`);
+        }
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
+      }
+
+      // Caminho de arquivo
+      if (fs.existsSync(pdfInput)) {
+        this.logger.log(`Lendo PDF do arquivo: ${pdfInput}`);
+        return fs.readFileSync(pdfInput);
+      }
+
+      throw new Error(`Formato de PDF não suportado: ${typeof pdfInput}`);
+    }
+
+    throw new Error(`Tipo de input inválido: ${typeof pdfInput}`);
+  }
+
+  /**
+   * Converter PDF para PNG usando pdf-to-png-converter
+   */
+  private async convertPdfToPng(
+    pdfBuffer: Buffer,
+    options: any,
+  ): Promise<Array<{ path: string; name: string }>> {
+    const tempId = this.generateTempId();
+    const tempFolder = path.join(this.tempDir, tempId);
+    
+    // Criar pasta temporária
+    if (!fs.existsSync(tempFolder)) {
+      fs.mkdirSync(tempFolder, { recursive: true });
+    }
+
+    this.logger.log(`Convertendo PDF para PNG na pasta: ${tempFolder}`);
+
+    try {
+      const pngPages = await pdfToPng(pdfBuffer, {
+        outputFolder: tempFolder,
+        outputFileMaskFunc: (pageNumber) => `page_${pageNumber}`,
+        pagesToProcess: options.pages || [-1] // -1 = todas as páginas
+      });
+
+      this.logger.log(`Conversão concluída: ${pngPages.length} páginas geradas`);
+      return pngPages;
+
+    } catch (error) {
+      this.logger.error(`Erro na conversão PDF→PNG: ${error.message}`);
+      throw new Error(`Falha na conversão: ${error.message}`);
+    }
+  }
+
+  /**
+   * Calcular configurações otimizadas baseadas na impressora
+   */
+  private calculateOptimalSettings(printerConfig: any, options: PdfProcessingOptions): any {
+    // Calcular DPI baseado na largura da impressora
+    let optimalDpi = 203; // Padrão
+    if (printerConfig.width <= 58) {
+      optimalDpi = 180; // 58mm
+    } else if (printerConfig.width <= 80) {
+      optimalDpi = 203; // 80mm
+    } else {
+      optimalDpi = 225; // 112mm+
+    }
+
+    // Calcular largura em pixels
+    const widthMm = printerConfig.printableWidth || printerConfig.width || 80;
+    const widthPx = Math.round((widthMm / 25.4) * optimalDpi);
+
+    return {
+      quality: options.quality || 95,
+      density: options.density || optimalDpi,
+      format: options.format || 'png',
+      pages: options.pages,
+      width: options.width || widthPx,
+      height: options.height, // Deixar automático baseado na proporção
+    };
+  }
+
+  /**
+   * Otimizar imagens para impressão térmica
+   */
+  private async optimizeImagesForThermalPrinting(
+    imagePaths: string[],
+    printerConfig: any,
+  ): Promise<string[]> {
+    const optimizedPaths: string[] = [];
+
+    for (const imagePath of imagePaths) {
+      try {
+        this.logger.log(`Otimizando imagem: ${imagePath}`);
+        
+        const optimizedPath = await this.imageService.optimizeImageForThermalPrinting(
+          imagePath,
+          printerConfig.id || 'default',
+        );
+        
+        optimizedPaths.push(optimizedPath);
+        this.logger.log(`Imagem otimizada salva: ${optimizedPath}`);
+        
+      } catch (error) {
+        this.logger.warn(`Falha ao otimizar ${imagePath}: ${error.message}`);
+        // Usar imagem original se otimização falhar
+        optimizedPaths.push(imagePath);
+      }
+    }
+
+    return optimizedPaths;
+  }
+
+  /**
+   * Limpeza de arquivos temporários
+   */
+  async cleanupTempFiles(maxAgeHours: number = 12): Promise<{ cleaned: number; errors: number }> {
+    this.logger.log(`Iniciando limpeza de arquivos temporários (idade máxima: ${maxAgeHours}h)`);
+    
+    let cleaned = 0;
+    let errors = 0;
+    const maxAge = maxAgeHours * 60 * 60 * 1000; // Converter para ms
+    const now = Date.now();
+
+    try {
+      if (!fs.existsSync(this.tempDir)) {
+        return { cleaned: 0, errors: 0 };
+      }
+
+      const folders = fs.readdirSync(this.tempDir);
+      
+      for (const folder of folders) {
+        const folderPath = path.join(this.tempDir, folder);
+        
+        try {
+          const stats = fs.statSync(folderPath);
+          const age = now - stats.mtime.getTime();
+          
+          if (age > maxAge) {
+            this.cleanupTempFolder(folderPath);
+            cleaned++;
+            this.logger.log(`Pasta temporária removida: ${folder}`);
+          }
+        } catch (error) {
+          errors++;
+          this.logger.warn(`Erro ao limpar pasta ${folder}: ${error.message}`);
+        }
+      }
+
+    } catch (error) {
+      this.logger.error(`Erro na limpeza geral: ${error.message}`);
+      errors++;
+    }
+
+    this.logger.log(`Limpeza concluída: ${cleaned} pastas removidas, ${errors} erros`);
+    return { cleaned, errors };
+  }
+
+  /**
+   * Obter estatísticas do serviço
+   */
+  getServiceStats(): any {
+    const tempDirExists = fs.existsSync(this.tempDir);
+    let tempFolders = 0;
+    let tempSize = 0;
+
+    if (tempDirExists) {
+      try {
+        const folders = fs.readdirSync(this.tempDir);
+        tempFolders = folders.length;
+        
+        // Calcular tamanho aproximado
+        folders.forEach(folder => {
+          try {
+            const folderPath = path.join(this.tempDir, folder);
+            const files = fs.readdirSync(folderPath);
+            files.forEach(file => {
+              const filePath = path.join(folderPath, file);
+              const stats = fs.statSync(filePath);
+              tempSize += stats.size;
+            });
+          } catch (error) {
+            // Ignorar erros de arquivos individuais
+          }
+        });
+      } catch (error) {
+        this.logger.warn(`Erro ao calcular estatísticas: ${error.message}`);
+      }
+    }
+
+    return {
+      service: 'PdfService',
+      version: '2.0.0',
+      engine: 'pdf-to-png-converter',
+      externalDependencies: false,
+      tempDirectory: this.tempDir,
+      tempFolders,
+      tempSizeBytes: tempSize,
+      tempSizeMB: Math.round(tempSize / 1024 / 1024 * 100) / 100,
+      features: [
+        'PDF Base64 support',
+        'File path support', 
+        'URL download support',
+        'Page selection',
+        'Quality control',
+        'Thermal optimization',
+        'Automatic cleanup',
+        'Zero external dependencies'
+      ]
+    };
+  }
+
+  /**
+   * Utilitários privados
    */
   private ensureTempDirectory(): void {
     if (!fs.existsSync(this.tempDir)) {
@@ -312,64 +408,30 @@ export class PdfService {
     }
   }
 
-  /**
-   * Limpeza de arquivos temporários
-   */
-  private async cleanupTempFiles(filePaths: string[]): Promise<void> {
-    for (const filePath of filePaths) {
-      try {
-        if (fs.existsSync(filePath)) {
-          await fs.promises.unlink(filePath);
-          this.logger.debug(`Arquivo temporário removido: ${filePath}`);
-        }
-      } catch (error) {
-        this.logger.warn(`Erro ao remover arquivo temporário ${filePath}: ${error.message}`);
-      }
+  private generateTempId(): string {
+    return `pdf_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+  }
+
+  private isBase64(str: string): boolean {
+    try {
+      return Buffer.from(str, 'base64').toString('base64') === str;
+    } catch {
+      return false;
     }
   }
 
-  /**
-   * Limpeza automática de arquivos antigos (executar periodicamente)
-   */
-  async cleanupOldTempFiles(maxAgeHours: number = 24): Promise<void> {
+  private cleanupTempFolder(folderPath: string): void {
     try {
-      const files = await fs.promises.readdir(this.tempDir);
-      const now = Date.now();
-      const maxAge = maxAgeHours * 60 * 60 * 1000; // Converter para ms
-
-      let cleanedCount = 0;
-      for (const file of files) {
-        const filePath = path.join(this.tempDir, file);
-        const stats = await fs.promises.stat(filePath);
-        
-        if (now - stats.mtime.getTime() > maxAge) {
-          await fs.promises.unlink(filePath);
-          cleanedCount++;
-        }
-      }
-
-      if (cleanedCount > 0) {
-        this.logger.log(`Limpeza automática: ${cleanedCount} arquivos removidos`);
+      if (fs.existsSync(folderPath)) {
+        const files = fs.readdirSync(folderPath);
+        files.forEach(file => {
+          const filePath = path.join(folderPath, file);
+          fs.unlinkSync(filePath);
+        });
+        fs.rmdirSync(folderPath);
       }
     } catch (error) {
-      this.logger.error(`Erro na limpeza automática: ${error.message}`);
+      this.logger.warn(`Erro ao limpar pasta ${folderPath}: ${error.message}`);
     }
-  }
-
-  /**
-   * Estatísticas do serviço
-   */
-  getServiceStats(): {
-    tempDir: string;
-    tempDirExists: boolean;
-    supportedFormats: string[];
-    maxFileSize: string;
-  } {
-    return {
-      tempDir: this.tempDir,
-      tempDirExists: fs.existsSync(this.tempDir),
-      supportedFormats: ['PDF (base64)', 'PDF (file path)', 'PDF (URL)'],
-      maxFileSize: '50MB (configurável)',
-    };
   }
 }

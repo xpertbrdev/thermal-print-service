@@ -1,6 +1,17 @@
-import { Controller, Post, Get, Body, Param, Query, Logger } from '@nestjs/common';
-import { PdfService } from '../services/pdf.service';
-import { PdfProcessingDto, PdfInfoDto } from '../dto/pdf.dto';
+import { Controller, Post, Get, Body, Query, Param, Logger } from '@nestjs/common';
+import { PdfService, PdfProcessingOptions } from '../services/pdf.service';
+
+export class ProcessPdfDto {
+  printerId: string;
+  pdf: string; // Base64, file path, or URL
+  pages?: number[];
+  quality?: number;
+  format?: 'png' | 'jpeg';
+}
+
+export class PdfInfoDto {
+  pdf: string; // Base64, file path, or URL
+}
 
 @Controller('pdf')
 export class PdfController {
@@ -9,104 +20,112 @@ export class PdfController {
   constructor(private readonly pdfService: PdfService) {}
 
   /**
-   * Processa PDF e converte para imagens otimizadas
+   * Processar PDF para impressão térmica
    */
   @Post('process')
-  async processPdf(@Body() processingDto: PdfProcessingDto) {
-    this.logger.log(`Processando PDF para impressora: ${processingDto.printerId}`);
-    
+  async processPdf(@Body() processDto: ProcessPdfDto) {
+    this.logger.log(`Processando PDF para impressora: ${processDto.printerId}`);
+
     try {
-      const result = await this.pdfService.processPdf(processingDto.pdf, {
-        printerId: processingDto.printerId,
-        quality: processingDto.quality,
-        density: processingDto.density,
-        format: processingDto.format,
-        pages: processingDto.pages,
-      });
+      const options: PdfProcessingOptions = {
+        quality: processDto.quality || 95,
+        format: processDto.format || 'png',
+        pages: processDto.pages,
+      };
+
+      const result = await this.pdfService.processPdfForThermalPrinting(
+        processDto.pdf,
+        processDto.printerId,
+        options,
+      );
 
       return {
         success: result.success,
         message: result.success 
-          ? `PDF processado com sucesso: ${result.processedPages}/${result.totalPages} páginas`
-          : 'Falha no processamento do PDF',
+          ? `PDF processado com sucesso: ${result.processedPages} páginas`
+          : `Falha no processamento: ${result.error}`,
         data: {
-          totalPages: result.totalPages,
           processedPages: result.processedPages,
-          images: result.images,
+          totalPages: result.totalPages,
           processingTime: result.processingTime,
-          errors: result.errors,
+          outputPaths: result.outputPaths,
+          optimizedPaths: result.optimizedPaths,
         },
+        error: result.error,
       };
+
     } catch (error) {
-      this.logger.error(`Erro no processamento de PDF: ${error.message}`);
+      this.logger.error(`Erro no processamento PDF: ${error.message}`);
       return {
         success: false,
-        message: 'Erro interno no processamento de PDF',
+        message: `Erro interno: ${error.message}`,
         error: error.message,
       };
     }
   }
 
   /**
-   * Obtém informações do PDF
+   * Obter informações do PDF
    */
   @Post('info')
   async getPdfInfo(@Body() infoDto: PdfInfoDto) {
-    this.logger.log('Obtendo informações do PDF');
-    
+    this.logger.log('Obtendo informações do PDF...');
+
     try {
       const info = await this.pdfService.getPdfInfo(infoDto.pdf);
-      
+
       return {
         success: true,
         message: 'Informações obtidas com sucesso',
         data: info,
       };
+
     } catch (error) {
-      this.logger.error(`Erro ao obter informações do PDF: ${error.message}`);
+      this.logger.error(`Erro ao obter informações: ${error.message}`);
       return {
         success: false,
-        message: 'Erro ao obter informações do PDF',
+        message: `Erro ao processar PDF: ${error.message}`,
         error: error.message,
       };
     }
   }
 
   /**
-   * Testa processamento de PDF com arquivo de exemplo
+   * Teste com PDF de exemplo
    */
   @Get('test')
-  async testPdfProcessing(@Query('printerId') printerId: string = 'cozinha-1') {
-    this.logger.log(`Teste de processamento PDF para impressora: ${printerId}`);
-    
+  async testPdf(@Query('printerId') printerId: string = 'default-printer') {
+    this.logger.log(`Teste PDF para impressora: ${printerId}`);
+
+    // PDF simples de exemplo em base64
+    const testPdfBase64 = 'JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDw8Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKNCAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVApxCjAgMCAwIHJnCjAgMCAwIFJHCjU2LjY5MyA3ODUuMTk3IG0KNTYuNjkzIDc0MS4yNzMgbApTCkVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyNDUgMDAwMDAgbgp0cmFpbGVyCjw8Ci9TaXplIDUKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjMzOQolJUVPRg==';
+
     try {
-      // PDF de teste simples (1 página em branco)
-      const testPdfBase64 = 'JVBERi0xLjQKMSAwIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovUmVzb3VyY2VzIDw8Cj4+Ci9Db250ZW50cyA0IDAgUgo+PgplbmRvYmoKNCAwIG9iago8PAovTGVuZ3RoIDQ0Cj4+CnN0cmVhbQpCVApxCjAgMCAwIHJnCjAgMCAwIFJHCjU2LjY5MyA3ODUuMTk3IG0KNTYuNjkzIDc0MS4yNzMgbApTCkVUCmVuZHN0cmVhbQplbmRvYmoKeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmCjAwMDAwMDAwMDkgMDAwMDAgbgowMDAwMDAwMDU4IDAwMDAwIG4KMDAwMDAwMDExNSAwMDAwMCBuCjAwMDAwMDAyNDUgMDAwMDAgbgp0cmFpbGVyCjw8Ci9TaXplIDUKL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjMzOQolJUVPRg==';
-      
-      const result = await this.pdfService.processPdf(testPdfBase64, {
+      const result = await this.pdfService.processPdfForThermalPrinting(
+        `data:application/pdf;base64,${testPdfBase64}`,
         printerId,
-        quality: 100,
-        format: 'png',
-      });
+        { quality: 100 },
+      );
 
       return {
-        success: true,
-        message: 'Teste de PDF executado com sucesso',
+        success: result.success,
+        message: result.success 
+          ? 'Teste PDF executado com sucesso'
+          : `Falha no teste: ${result.error}`,
         data: {
-          testPdf: 'PDF de teste (1 página em branco)',
-          result: {
-            totalPages: result.totalPages,
-            processedPages: result.processedPages,
-            processingTime: result.processingTime,
-            errors: result.errors,
-          },
+          testPdf: 'PDF simples de 1 página',
+          processedPages: result.processedPages,
+          processingTime: result.processingTime,
+          outputPaths: result.outputPaths,
         },
+        error: result.error,
       };
+
     } catch (error) {
-      this.logger.error(`Erro no teste de PDF: ${error.message}`);
+      this.logger.error(`Erro no teste PDF: ${error.message}`);
       return {
         success: false,
-        message: 'Erro no teste de PDF',
+        message: `Erro no teste: ${error.message}`,
         error: error.message,
       };
     }
@@ -116,21 +135,28 @@ export class PdfController {
    * Limpeza de arquivos temporários
    */
   @Post('cleanup')
-  async cleanupTempFiles(@Query('maxAgeHours') maxAgeHours: number = 24) {
-    this.logger.log(`Executando limpeza de arquivos temporários (${maxAgeHours}h)`);
-    
+  async cleanupTempFiles(@Body() body: { maxAgeHours?: number } = {}) {
+    this.logger.log('Iniciando limpeza de arquivos temporários...');
+
     try {
-      await this.pdfService.cleanupOldTempFiles(maxAgeHours);
-      
+      const maxAge = body.maxAgeHours || 12;
+      const result = await this.pdfService.cleanupTempFiles(maxAge);
+
       return {
         success: true,
-        message: `Limpeza executada com sucesso (arquivos > ${maxAgeHours}h removidos)`,
+        message: `Limpeza concluída: ${result.cleaned} pastas removidas`,
+        data: {
+          cleaned: result.cleaned,
+          errors: result.errors,
+          maxAgeHours: maxAge,
+        },
       };
+
     } catch (error) {
       this.logger.error(`Erro na limpeza: ${error.message}`);
       return {
         success: false,
-        message: 'Erro na limpeza de arquivos temporários',
+        message: `Erro na limpeza: ${error.message}`,
         error: error.message,
       };
     }
@@ -140,59 +166,59 @@ export class PdfController {
    * Estatísticas do serviço PDF
    */
   @Get('stats')
-  async getServiceStats() {
+  async getStats() {
+    this.logger.log('Obtendo estatísticas do serviço PDF...');
+
     try {
       const stats = this.pdfService.getServiceStats();
-      
+
       return {
         success: true,
         message: 'Estatísticas obtidas com sucesso',
         data: stats,
       };
+
     } catch (error) {
       this.logger.error(`Erro ao obter estatísticas: ${error.message}`);
       return {
         success: false,
-        message: 'Erro ao obter estatísticas',
+        message: `Erro interno: ${error.message}`,
         error: error.message,
       };
     }
   }
 
   /**
-   * Documentação do serviço PDF
+   * Informações sobre o serviço PDF
    */
   @Get('info')
-  getServiceInfo() {
+  async getServiceInfo() {
     return {
       success: true,
-      message: 'Informações do serviço PDF',
+      message: 'Serviço PDF ativo',
       data: {
-        description: 'Serviço para processamento de PDF em impressoras térmicas',
+        service: 'PDF Processing Service',
+        version: '2.0.0',
+        engine: 'pdf-to-png-converter',
+        externalDependencies: false,
         features: [
-          'Conversão PDF → Imagem otimizada',
-          'Suporte a base64, arquivo local e URL',
-          'Otimização automática para impressão térmica',
-          'Processamento de páginas específicas',
-          'Ajuste de qualidade e DPI',
-          'Limpeza automática de arquivos temporários',
+          'PDF Base64 support',
+          'File path support',
+          'URL download support',
+          'Page selection',
+          'Quality control',
+          'Thermal optimization',
+          'Automatic cleanup',
+          'Zero external dependencies'
         ],
-        supportedInputs: [
-          'PDF base64 (com ou sem prefixo)',
-          'Caminho de arquivo local',
-          'URL de PDF público',
-        ],
-        outputFormats: ['PNG', 'JPEG'],
-        maxFileSize: '50MB',
-        tempDirectory: 'temp/pdf/',
         endpoints: [
-          'POST /pdf/process - Processar PDF',
-          'POST /pdf/info - Informações do PDF',
+          'POST /pdf/process - Processar PDF para impressão',
+          'POST /pdf/info - Obter informações do PDF',
           'GET /pdf/test - Teste com PDF exemplo',
           'POST /pdf/cleanup - Limpeza de temporários',
           'GET /pdf/stats - Estatísticas do serviço',
-          'GET /pdf/info - Esta documentação',
-        ],
+          'GET /pdf/info - Informações do serviço'
+        ]
       },
     };
   }
