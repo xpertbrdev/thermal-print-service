@@ -55,7 +55,8 @@ export class ConfigService {
   async getDefaultSettings() {
     const config = await this.loadConfig();
     return config.defaultSettings || {
-      width: 48,
+      charPerLine: 48, // Caracteres por linha padrão
+      width: 80, // Largura física padrão em mm
       characterSet: 'PC852_LATIN2',
       timeout: 5000,
       margins: {
@@ -85,17 +86,19 @@ export class ConfigService {
       printers: [
         {
           id: 'default-printer',
-          name: 'Impressora Padrão',
+          name: 'Impressora Padrão 80mm',
           type: 'epson' as any,
           connectionType: 'network' as any,
           address: '192.168.1.100',
-          width: 48,
+          charPerLine: 48, // 48 caracteres por linha
+          width: 80, // 80mm de largura física
           characterSet: 'PC852_LATIN2' as any,
           timeout: 5000
         }
       ],
       defaultSettings: {
-        width: 48,
+        charPerLine: 48, // Padrão: 48 caracteres por linha
+        width: 80, // Padrão: 80mm de largura física
         characterSet: 'PC852_LATIN2' as any,
         timeout: 5000,
         margins: {

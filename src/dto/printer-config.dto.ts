@@ -48,7 +48,11 @@ export class PrinterConfigDto {
 
   @IsOptional()
   @IsNumber()
-  width?: number;
+  charPerLine?: number; // Caracteres por linha (ex: 48 para 80mm)
+
+  @IsOptional()
+  @IsNumber()
+  width?: number; // Largura física em mm (ex: 80 para impressora 80mm)
 
   @IsOptional()
   @IsEnum(CharacterSetType)
@@ -68,7 +72,8 @@ export class PrinterConfigRequestDto {
   @IsOptional()
   @IsObject()
   defaultSettings?: {
-    width?: number;
+    charPerLine?: number; // Caracteres por linha padrão
+    width?: number; // Largura física padrão em mm
     characterSet?: CharacterSetType;
     timeout?: number;
     margins?: {

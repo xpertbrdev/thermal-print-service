@@ -106,7 +106,7 @@ export class PrinterService {
     const printer = new ThermalPrinter({
       type: printerType,
       interface: connectionInterface,
-      width: config.width || defaultSettings.width,
+      width: config.charPerLine || defaultSettings.charPerLine || 48, // Usar charPerLine para caracteres por linha
       characterSet: characterSet,
       // timeout removido - não suportado pela interface
       removeSpecialCharacters: false,
@@ -257,8 +257,9 @@ export class PrinterService {
       
       // Obter configuração da impressora para calcular largura em pixels
       const printerConfig = await this.configService.getPrinterConfig(this.currentPrinterId);
+      const printerWidthMm = printerConfig?.width || 80; // Largura física padrão: 80mm
       const printerWidthPixels = this.imageService.calculatePrinterWidthInPixels(
-        printerConfig?.width || 48,
+        printerWidthMm,
         203 // DPI padrão para impressoras térmicas
       );
 

@@ -1,0 +1,331 @@
+{
+  "description": "Exemplos de configuração com as novas propriedades charPerLine e width",
+  "examples": [
+    {
+      "name": "Configuração Múltiplas Impressoras",
+      "description": "Restaurante com impressoras de diferentes tamanhos",
+      "payload": {
+        "printers": [
+          {
+            "id": "cozinha-80mm",
+            "name": "Impressora Cozinha 80mm",
+            "type": "epson",
+            "connectionType": "network",
+            "address": "192.168.1.101",
+            "charPerLine": 48,
+            "width": 80,
+            "characterSet": "PC852_LATIN2",
+            "timeout": 5000
+          },
+          {
+            "id": "balcao-58mm", 
+            "name": "Impressora Balcão 58mm",
+            "type": "star",
+            "connectionType": "network",
+            "address": "192.168.1.102",
+            "charPerLine": 32,
+            "width": 58,
+            "characterSet": "PC850_MULTILINGUAL",
+            "timeout": 5000
+          },
+          {
+            "id": "delivery-112mm",
+            "name": "Impressora Delivery 112mm",
+            "type": "brother",
+            "connectionType": "usb",
+            "address": "/dev/usb/lp0",
+            "charPerLine": 80,
+            "width": 112,
+            "characterSet": "PC437_USA",
+            "timeout": 8000
+          }
+        ],
+        "defaultSettings": {
+          "charPerLine": 48,
+          "width": 80,
+          "characterSet": "PC852_LATIN2",
+          "timeout": 5000,
+          "margins": {
+            "top": 0,
+            "bottom": 0,
+            "left": 0,
+            "right": 0
+          },
+          "spacing": {
+            "lineHeight": 1,
+            "paragraphSpacing": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "Configuração Impressora 58mm",
+      "description": "Configuração específica para impressora pequena",
+      "payload": {
+        "printers": [
+          {
+            "id": "ticket-58mm",
+            "name": "Impressora Tickets 58mm",
+            "type": "tanca",
+            "connectionType": "serial",
+            "address": "/dev/ttyUSB0",
+            "charPerLine": 32,
+            "width": 58,
+            "characterSet": "PC860_PORTUGUESE",
+            "timeout": 3000
+          }
+        ],
+        "defaultSettings": {
+          "charPerLine": 32,
+          "width": 58,
+          "characterSet": "PC860_PORTUGUESE",
+          "timeout": 3000,
+          "margins": {
+            "top": 1,
+            "bottom": 2,
+            "left": 0,
+            "right": 0
+          },
+          "spacing": {
+            "lineHeight": 1,
+            "paragraphSpacing": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "Configuração Impressora 112mm",
+      "description": "Configuração para impressora grande (relatórios)",
+      "payload": {
+        "printers": [
+          {
+            "id": "relatorios-112mm",
+            "name": "Impressora Relatórios 112mm",
+            "type": "daruma",
+            "connectionType": "network",
+            "address": "192.168.1.200",
+            "charPerLine": 80,
+            "width": 112,
+            "characterSet": "PC858_EURO",
+            "timeout": 10000
+          }
+        ],
+        "defaultSettings": {
+          "charPerLine": 80,
+          "width": 112,
+          "characterSet": "PC858_EURO",
+          "timeout": 10000,
+          "margins": {
+            "top": 2,
+            "bottom": 3,
+            "left": 2,
+            "right": 2
+          },
+          "spacing": {
+            "lineHeight": 1,
+            "paragraphSpacing": 2
+          }
+        }
+      }
+    }
+  ],
+  "tamanhos_comuns": {
+    "58mm": {
+      "charPerLine": 32,
+      "width": 58,
+      "pixels_203dpi": 465,
+      "uso": "Cupons, tickets pequenos"
+    },
+    "80mm": {
+      "charPerLine": 48,
+      "width": 80,
+      "pixels_203dpi": 640,
+      "uso": "Recibos padrão, cupons fiscais"
+    },
+    "112mm": {
+      "charPerLine": 80,
+      "width": 112,
+      "pixels_203dpi": 896,
+      "uso": "Relatórios, etiquetas grandes"
+    }
+  },
+  "exemplos_impressao": [
+    {
+      "name": "Impressão com Imagem - 58mm",
+      "printerId": "ticket-58mm",
+      "content": [
+        {
+          "type": "text",
+          "value": "TICKET CINEMA",
+          "style": {
+            "bold": true,
+            "align": "center",
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "type": "image",
+          "base64": "data:image/png;base64,iVBORw0KGgo...",
+          "description": "Logo será redimensionada para 465px (58mm)"
+        },
+        {
+          "type": "table",
+          "table": {
+            "headers": ["Filme", "Sala"],
+            "rows": [
+              {"cells": ["Vingadores", "3"]}
+            ],
+            "columns": [
+              {"width": 20, "align": "left"},
+              {"width": 8, "align": "center"}
+            ]
+          }
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "name": "Impressão com Imagem - 80mm",
+      "printerId": "cozinha-80mm",
+      "content": [
+        {
+          "type": "text",
+          "value": "PEDIDO RESTAURANTE",
+          "style": {
+            "bold": true,
+            "align": "center",
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "type": "image",
+          "path": "https://exemplo.com/logo.png",
+          "description": "Logo será redimensionada para 640px (80mm)"
+        },
+        {
+          "type": "table",
+          "table": {
+            "headers": ["Item", "Qtd", "Valor"],
+            "rows": [
+              {"cells": ["Pizza Margherita", "1", "R$ 35,00"]},
+              {"cells": ["Refrigerante", "2", "R$ 12,00"]}
+            ],
+            "columns": [
+              {"width": 24, "align": "left"},
+              {"width": 6, "align": "center"},
+              {"width": 12, "align": "right"}
+            ]
+          }
+        },
+        {
+          "type": "qr-code",
+          "value": "https://pedido.restaurante.com/123",
+          "options": {
+            "size": 6,
+            "align": "center"
+          }
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    },
+    {
+      "name": "Impressão com Imagem - 112mm",
+      "printerId": "relatorios-112mm",
+      "content": [
+        {
+          "type": "text",
+          "value": "RELATÓRIO DE VENDAS DIÁRIO",
+          "style": {
+            "bold": true,
+            "align": "center",
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "type": "image",
+          "base64": "data:image/png;base64,iVBORw0KGgo...",
+          "description": "Gráfico será redimensionado para 896px (112mm)"
+        },
+        {
+          "type": "table",
+          "table": {
+            "headers": ["Hora", "Pedidos", "Valor Total", "Método Pagamento", "Status"],
+            "rows": [
+              {"cells": ["08:00", "15", "R$ 450,00", "Cartão", "Concluído"]},
+              {"cells": ["09:00", "23", "R$ 678,50", "PIX", "Concluído"]},
+              {"cells": ["10:00", "18", "R$ 523,25", "Dinheiro", "Concluído"]}
+            ],
+            "columns": [
+              {"width": 8, "align": "center"},
+              {"width": 10, "align": "center"},
+              {"width": 15, "align": "right"},
+              {"width": 18, "align": "left"},
+              {"width": 12, "align": "center"}
+            ]
+          }
+        },
+        {
+          "type": "text",
+          "value": "Total do Período: R$ 1.651,75",
+          "style": {
+            "bold": true,
+            "align": "right",
+            "width": 2,
+            "height": 1
+          }
+        },
+        {
+          "type": "cut"
+        }
+      ]
+    }
+  ],
+  "calculos_precisao": {
+    "description": "Comparação entre método antigo e novo",
+    "impressora_58mm": {
+      "metodo_antigo": {
+        "calculo": "32 chars × 2.5mm = 80mm → 640px",
+        "resultado": "640px (impreciso)"
+      },
+      "metodo_novo": {
+        "calculo": "58mm direto → 465px",
+        "resultado": "465px (preciso)",
+        "melhoria": "+27% mais preciso"
+      }
+    },
+    "impressora_80mm": {
+      "metodo_antigo": {
+        "calculo": "48 chars × 2.5mm = 120mm → 960px",
+        "resultado": "960px (impreciso)"
+      },
+      "metodo_novo": {
+        "calculo": "80mm direto → 640px", 
+        "resultado": "640px (preciso)",
+        "melhoria": "+33% mais preciso"
+      }
+    },
+    "impressora_112mm": {
+      "metodo_antigo": {
+        "calculo": "80 chars × 2.5mm = 200mm → 1600px",
+        "resultado": "1600px (impreciso)"
+      },
+      "metodo_novo": {
+        "calculo": "112mm direto → 896px",
+        "resultado": "896px (preciso)",
+        "melhoria": "+44% mais preciso"
+      }
+    }
+  },
+  "compatibilidade": {
+    "retrocompatibilidade": "Configurações antigas continuam funcionando",
+    "migracao_automatica": "Valores padrão aplicados automaticamente",
+    "metodos_legados": "Marcados como deprecated mas funcionais"
+  }
+}

@@ -258,18 +258,33 @@ export class ImageService {
   }
 
   /**
-   * Calcula largura da impressora em pixels baseado na largura em caracteres
-   * @param characterWidth - Largura em caracteres (ex: 32, 48, 58)
+   * Calcula largura da impressora em pixels baseado na largura física em mm
+   * @param widthMm - Largura física em mm (ex: 58, 80, 112)
    * @param dpi - DPI da impressora (padrão: 203)
    */
-  calculatePrinterWidthInPixels(characterWidth: number, dpi: number = 203): number {
+  calculatePrinterWidthInPixels(widthMm: number, dpi: number = 203): number {
+    const totalWidthInches = widthMm / 25.4; // Converter mm para polegadas
+    const pixelWidth = Math.round(totalWidthInches * dpi);
+    
+    this.logger.log(`Largura calculada: ${widthMm}mm = ${totalWidthInches.toFixed(2)}in = ${pixelWidth}px (${dpi} DPI)`);
+    
+    return pixelWidth;
+  }
+
+  /**
+   * Calcula largura da impressora em pixels baseado em caracteres (método legado)
+   * @param characterWidth - Largura em caracteres (ex: 32, 48, 58)
+   * @param dpi - DPI da impressora (padrão: 203)
+   * @deprecated Use calculatePrinterWidthInPixels(widthMm) em vez disso
+   */
+  calculatePrinterWidthInPixelsFromChars(characterWidth: number, dpi: number = 203): number {
     // Cálculo aproximado: cada caractere tem ~2.5mm de largura
     const characterWidthMm = 2.5;
     const totalWidthMm = characterWidth * characterWidthMm;
     const totalWidthInches = totalWidthMm / 25.4;
     const pixelWidth = Math.round(totalWidthInches * dpi);
     
-    this.logger.log(`Largura calculada: ${characterWidth} chars = ${totalWidthMm}mm = ${pixelWidth}px`);
+    this.logger.log(`Largura calculada (chars): ${characterWidth} chars = ${totalWidthMm}mm = ${pixelWidth}px`);
     
     return pixelWidth;
   }
