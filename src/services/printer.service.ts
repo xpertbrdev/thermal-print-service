@@ -124,6 +124,7 @@ export class PrinterService {
   async processJobAsync(job: any): Promise<void> {
     const printerConfig = await this.getPrinterConfig(job.printerId);
     const printer = await this.createPrinterInstance(printerConfig);
+    this.currentPrinterId = job.printerId || 'default';
     
     await this.processPrintContent(printer, job.content);
     await printer.execute();

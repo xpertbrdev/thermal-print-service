@@ -5,6 +5,7 @@ import { pdf } from 'pdf-to-img';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import { setTimeout } from 'timers/promises';
 
 export interface PdfProcessingOptions {
   quality?: number;
@@ -41,7 +42,7 @@ export interface PdfInfo {
 @Injectable()
 export class PdfV3Service {
   private readonly logger = new Logger(PdfV3Service.name);
-  private readonly tempDir = '/tmp/thermal-printer-pdf-v3';
+  private readonly tempDir = '/temp';
 
   constructor(
     private readonly configService: ConfigService,
@@ -244,15 +245,15 @@ export class PdfV3Service {
     pdfBuffer: Buffer,
     options: any,
   ): Promise<string[]> {
-    const tempId = this.generateTempId();
-    const tempFolder = path.join(this.tempDir, tempId);
+    // const tempId = this.generateTempId();
+    // const tempFolder = path.join(this.tempDir, tempId);
     
     // Criar pasta temporária
-    if (!fs.existsSync(tempFolder)) {
-      fs.mkdirSync(tempFolder, { recursive: true });
+    if (!fs.existsSync(this.tempDir)) {
+      fs.mkdirSync(this.tempDir, { recursive: true });
     }
 
-    this.logger.log(`Convertendo PDF para imagens na pasta: ${tempFolder}`);
+    this.logger.log(`Convertendo PDF para imagens na pasta: ${this.tempDir}`);
 
     try {
       // Configurações para pdf-to-img
@@ -263,7 +264,8 @@ export class PdfV3Service {
       };
 
       this.logger.log(`Iniciando conversão v3 com opções:`, pdfOptions);
-
+      // pequeno delay pra evitar erro de timeout na leitura do pdf
+      await setTimeout(20, 'ok')
       const document = await pdf(pdfBuffer, pdfOptions);
       const imagePaths: string[] = [];
       let pageNumber = 1;
@@ -279,7 +281,7 @@ export class PdfV3Service {
           continue;
         }
 
-        const imagePath = path.join(tempFolder, `page_${pageNumber}.png`);
+        const imagePath = path.join(this.tempDir, `page_${pageNumber}.png`);
         fs.writeFileSync(imagePath, image);
         imagePaths.push(imagePath);
         
@@ -300,7 +302,7 @@ export class PdfV3Service {
       this.logger.error(`Erro na conversão PDF→IMG v3: ${error.message}`);
       
       // Limpar pasta temporária em caso de erro
-      this.cleanupTempFolder(tempFolder);
+      this.cleanupTempFolder(this.tempDir);
       
       throw new Error(`Falha na conversão v3: ${error.message}`);
     }

@@ -33,7 +33,6 @@
     "node-thermal-printer": "^4.5.0",
     "pdf-poppler": "^0.2.1",
     "pdf-to-img": "^5.0.0",
-    "pdf2pic": "^3.2.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sharp": "^0.34.4"
