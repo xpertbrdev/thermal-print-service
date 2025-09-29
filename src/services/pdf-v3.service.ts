@@ -258,7 +258,7 @@ export class PdfV3Service {
     try {
       // Configurações para pdf-to-img
       const pdfOptions = {
-        scale: options.density ? options.density / 150 : 1.0, // Converter DPI para escala
+        scale: 3.0, // scale: definido como padrão 3.0 para maxima qualidade // options.density ? options.density / 100 : 1.0, // Converter DPI para escala
         width: options.width,
         height: options.height,
       };
@@ -267,6 +267,7 @@ export class PdfV3Service {
       // pequeno delay pra evitar erro de timeout na leitura do pdf
       await setTimeout(20, 'ok')
       const document = await pdf(pdfBuffer, pdfOptions);
+
       const imagePaths: string[] = [];
       let pageNumber = 1;
 

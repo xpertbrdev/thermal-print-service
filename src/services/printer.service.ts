@@ -215,10 +215,11 @@ export class PrinterService {
       interface: connectionInterface,
       width: config.charPerLine || defaultSettings.charPerLine || 48, // Usar charPerLine para caracteres por linha
       characterSet: characterSet,
-      // timeout removido - não suportado pela interface
       removeSpecialCharacters: false,
       lineCharacter: '-',
-      // breakLine: 1 // Removido - causava erro de tipo
+      options: {
+        timeout: 30000 // definido 30 segundos padrão para previnir erros de timeout na conversão de pdf para img enquanto socket estiver aberto
+      }
     });
 
     // Configurar área de impressão via comandos ESC/POS
