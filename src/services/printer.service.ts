@@ -157,13 +157,18 @@ export class PrinterService {
     } catch (error) {
       this.logger.error('Erro durante impressão:', error);
       throw new BadRequestException(`Falha na impressão: ${error.message}`);
+      // return {
+      //   success: true,
+      //   message: 'Impressão realizada com sucesso',
+      //   buffer: this.limparTextoEscPos(bufferText)
+      // };
     }
   }
 
   limparTextoEscPos(str: string) {
     // Mantém apenas caracteres imprimíveis e quebras de linha
-    let result = str.replaceAll(/[^\x20-\x7E\n]/g, '');
-    result = result.replace(/[^\x20-\x7E\n]/g, '');
+    let result = str?.replaceAll(/[^\x20-\x7E\n]/g, '');
+    result = result?.replace(/[^\x20-\x7E\n]/g, '');
     return result
   }
 
