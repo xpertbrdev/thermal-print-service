@@ -6,11 +6,13 @@ import { ProcessPdfDto, PdfInfoDto, CleanupDto } from '../dto/pdf.dto';
 
 @Controller('pdf')
 export class PdfController {
-  private readonly logger = new Logger(PdfController.name);
+  // private readonly logger = new Logger(PdfController.name, { timestamp: true });
 
   constructor(
+    private readonly logger: Logger,
     private readonly pdfV3Service: PdfV3Service,
-  ) {}
+  ) {
+  }
 
   /**
    * Processar PDF para impressão térmica

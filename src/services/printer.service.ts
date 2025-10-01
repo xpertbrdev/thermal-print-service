@@ -22,7 +22,7 @@ export class PrinterService {
    * @param printer - Instância do ThermalPrinter
    * @param config - Configuração da impressora
    */
-  private configurePrintableArea(printer: ThermalPrinter, config: PrinterConfigDto): void {
+  private async configurePrintableArea(printer: ThermalPrinter, config: PrinterConfigDto): Promise<void> {
     this.logger.log(`Configurando área de impressão para ${config.name || config.id}`);
     
     if (config.printableWidth && config.width && config.printableWidth < config.width) {
@@ -31,17 +31,17 @@ export class PrinterService {
       const marginUnits = this.calculateMarginUnits(marginMm);
       
       // ESC l n - Define margem esquerda
-      printer.raw(Buffer.from([0x1B, 0x6C, marginUnits]));
+      await printer.raw(Buffer.from([0x1B, 0x6C, marginUnits]));
       
       // ESC Q n - Define margem direita (calculada automaticamente pela impressora)
       const rightMarginUnits = this.calculateMarginUnits(marginMm);
-      printer.raw(Buffer.from([0x1B, 0x51, rightMarginUnits]));
+      await printer.raw(Buffer.from([0x1B, 0x51, rightMarginUnits]));
       
       this.logger.log(`Margens configuradas: ${marginMm}mm (${marginUnits} units) cada lado`);
       this.logger.log(`Área útil: ${config.printableWidth}mm de ${config.width}mm total`);
     } else {
       // Configurar margem zero para área máxima de impressão
-      this.setZeroMargins(printer);
+      await this.setZeroMargins(printer);
       
       this.logger.log('Margens zeradas - usando área máxima de impressão');
     }
@@ -51,12 +51,12 @@ export class PrinterService {
    * Define margens zero para máxima área de impressão
    * @param printer - Instância do ThermalPrinter
    */
-  private setZeroMargins(printer: ThermalPrinter): void {
+  private async setZeroMargins(printer: ThermalPrinter): Promise<void> {
     // ESC l 0 - Margem esquerda = 0
-    printer.raw(Buffer.from([0x1B, 0x6C, 0x00]));
+    await printer.raw(Buffer.from([0x1B, 0x6C, 0x00]));
     
     // ESC Q 0 - Margem direita = 0
-    printer.raw(Buffer.from([0x1B, 0x51, 0x00]));
+    await printer.raw(Buffer.from([0x1B, 0x51, 0x00]));
     
     this.logger.log('Comandos ESC/POS enviados: ESC l 0, ESC Q 0 (margens zero)');
   }
@@ -89,14 +89,14 @@ export class PrinterService {
    * @param heightMm - Altura da área em mm
    * @param dpi - DPI da impressora (padrão: 203)
    */
-  private setPrintableAreaAdvanced(
+  private async setPrintableAreaAdvanced(
     printer: ThermalPrinter,
     startXMm: number,
     startYMm: number,
     widthMm: number,
     heightMm: number,
     dpi: number = 203
-  ): void {
+  ): Promise<void> {
     // Converter mm para unidades da impressora (1/180 inch)
     const unitsPerMm = 180 / 25.4; // ~7.087 units per mm
     
@@ -114,7 +114,7 @@ export class PrinterService {
       height & 0xFF, (height >> 8) & 0xFF   // dyL, dyH (altura)
     ]);
     
-    printer.raw(command);
+    await printer.raw(command);
     
     this.logger.log(`Área de impressão avançada configurada:`);
     this.logger.log(`  Posição: (${startXMm}, ${startYMm})mm = (${xStart}, ${yStart}) units`);
@@ -137,7 +137,7 @@ export class PrinterService {
       this.currentPrinterId = printRequest.printerId || 'default';
       const printerConfig = await this.getPrinterConfig(printRequest.printerId);
       const printer = await this.createPrinterInstance(printerConfig);
-      
+
       await this.processPrintContent(printer, printRequest.content);
       
       let bufferText
@@ -228,11 +228,11 @@ export class PrinterService {
     });
 
     // Configurar área de impressão via comandos ESC/POS
-    this.configurePrintableArea(printer, config);
+    await this.configurePrintableArea(printer, config);
 
     // Se configuração avançada estiver disponível, usar comando ESC W
     if (config.advancedPrintArea) {
-      this.setPrintableAreaAdvanced(
+      await this.setPrintableAreaAdvanced(
         printer,
         config.advancedPrintArea.startXMm || 0,
         config.advancedPrintArea.startYMm || 0,

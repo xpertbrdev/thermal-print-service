@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { PrinterController } from '../controllers/printer.controller';
 import { ConfigController } from '../controllers/config.controller';
 import { PrintSessionController } from '../controllers/print-session.controller';
@@ -26,6 +26,7 @@ import { PdfController } from '../controllers/pdf.controller';
     PdfController
   ],
   providers: [
+    Logger,
     PrinterService, 
     ConfigService, 
     ImageService,

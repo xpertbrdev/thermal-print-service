@@ -150,7 +150,7 @@ export class ImageService {
         const oneHourAgo = Date.now() - (60 * 60 * 1000);
         if (stats.mtime.getTime() < oneHourAgo) {
           await fs.unlink(filePath);
-          this.logger.log(`Arquivo temporário removido: ${file}`);
+          this.logger.log(`Arquivo temporário removido: ${file} [created at: ${stats.mtime.getTime()}]`);
         }
       }
     } catch (error) {
